@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail } from "./model.js";
 
-export async function installComponent(id: string, from: string | undefined, target: string | undefined, preview: boolean, diff: boolean) {
+export async function selectComponent(id: string, from?: string, target?: string) {
   if (!/^[a-z][a-z0-9-]*$/.test(id)) fail("install.item", "Expected a component ID.");
   const pkg = JSON.parse(await readFile("package.json", "utf8"));
   const deps = { ...pkg.devDependencies, ...pkg.dependencies };
@@ -24,6 +24,11 @@ export async function installComponent(id: string, from: string | undefined, tar
   const binary = process.platform === "win32" ? "shadcn.cmd" : "shadcn";
   const local = resolve("node_modules", ".bin", binary);
   const executable = await access(local).then(() => local, () => binary);
+  return { executable, item, selected, manifest };
+}
+
+export async function installComponent(id: string, from: string | undefined, target: string | undefined, preview: boolean, diff: boolean) {
+  const { executable, item, selected } = await selectComponent(id, from, target);
   console.error(`Selected ${selected}: ${id}`);
   const child = spawnSync(executable, ["add", item, ...(diff ? ["--diff"] : preview ? ["--dry-run"] : [])], { stdio: "inherit" });
   if (child.error) fail("install.shadcn", "Install the shadcn CLI in this project or place it on PATH.");

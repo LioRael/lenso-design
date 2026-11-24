@@ -16,37 +16,44 @@ In an empty project with Lenso 1.1.2, save this as `design.json`:
 ```
 
 ```sh
-lenso ext add github-release:LioRael/lenso-design/design --id design --constraint '=0.1.0-preview.3'
+lenso ext add github-release:LioRael/lenso-design/design --id design --constraint '=0.1.0-preview.4'
 lenso design resolve surface --context appearance=dark --json
 ```
 
 Review the read grant for `design.json`. The value at `outputs.resolve.value` is `#222`. The command works with a locked, cached extension offline. The [contract reference](spec/contract-v1.md) documents this checkout's schema, CI checks and context limits. New optional fields, usage references and repeatable context options require preview.2.
 
-## Install the standalone CLI
+## Use the full `lenso design` command set (preview.4)
 
-With Node.js 22.18 or later, run these commands in your project:
+The npm author extension exposes all 13 commands under `lenso design`. It requires Node.js 22.18+ and a Lenso host with the `json_process` handler and `json_processes` installation grants. The public Lenso 1.1.2 release supports the Wasm setup above. On Lenso 1.1.2, the npm package provides the compatibility executable `lenso-design` for author commands.
+
+In a project using a compatible host, install the package and register its manifest.
 
 ```sh
-npm install @lenso/design@preview
-npx lenso-design init
-npx lenso-design check
+npm install @lenso/design@0.1.0-preview.4
+lenso ext add node_modules/@lenso/design/dist/extension.json --id design --constraint '=0.1.0-preview.4'
+lenso design --help
+lenso design init
+lenso design check
+lenso design build
 ```
+
+Choose one Design extension per project. To switch an existing Wasm-only project, run `lenso ext remove design` before registering the new manifest. The Wasm-only installation needs a read grant for `design.json`. The author installation runs project-local Node handlers under your OS account, including executable author configurations and shadcn. Review the proposed process grants when registering it. Both installations expose contract operations under the same command names.
 
 ### Find and reuse an existing component
 
-Run `npx lenso-design discover "Advanced options" --json` in an existing JSX or TSX project. The command searches imported JSX tags and their opening attributes and returns ranked usage locations, local names, module specifiers, exports, and resolvable declarations. It reads tsconfig when present. No Design contract is needed. The [browser acceptance case](test/discovery-browser.mjs) exercises a real Lenso Docs component from an unannotated project.
+Run `lenso design discover "Advanced options" --json` in an existing JSX or TSX project. The command searches imported JSX tags and their opening attributes and returns ranked usage locations, local names, module specifiers, exports, and resolvable declarations. It reads tsconfig when present. No Design contract is needed. The [browser acceptance case](test/discovery-browser.mjs) exercises a real Lenso Docs component from an unannotated project.
 
 ### Install a native component
 
 In a Solid project configured for shadcn, install the shadcn CLI locally or put it on PATH. The npm package includes the bold-toggle and details-dialog Registry items. Preview, compare, then install or upgrade with:
 
 ```sh
-npx lenso-design install details-dialog --dry-run
-npx lenso-design install details-dialog --diff
-npx lenso-design install details-dialog
+lenso design install details-dialog --dry-run
+lenso design install details-dialog --diff
+lenso design install details-dialog
 ```
 
-A direct Tailwind or StyleX dependency selects its target. With neither present the CLI offers the CSS Modules item, which requires a CSS Modules compiler. Choose `--target css-modules|stylex|tailwind` explicitly when both are present. Use `--from <components-directory>` for your own generated items. shadcn owns the file plan and overwrite prompts. For the bundled items, import `@lenso/design/theme.css` in your consumer stylesheet. For Tailwind, also import `@lenso/design/tailwind.css` after Tailwind itself. Custom registries can supply their own theme.
+A direct Tailwind or StyleX dependency selects its target. With neither present the CLI offers the CSS Modules item, which requires a CSS Modules compiler. Choose `--target css-modules|stylex|tailwind` explicitly when both are present. Use `--from <components-directory>` for your own generated items. shadcn previews the file plan. Lenso asks before replacing each changed file in a generated item with explicit targets; use `--json` and `--answers` to review and resume from automation. The structured host allows 30 seconds per handler invocation. For the bundled items, import `@lenso/design/theme.css` in your consumer stylesheet. For Tailwind, also import `@lenso/design/tailwind.css` after Tailwind itself. Custom registries can supply their own theme.
 
 ## Run the example
 
@@ -117,7 +124,7 @@ Use `await loadDesign(path)` to load the same project configuration as the CLI. 
 
 ## Command line
 
-The package exposes `lenso-design`. A project can run `lenso-design init` to create a shared contract and an ES-module author config (`design.config.mts`), then `check`, `build`, `inspect`, `tokens`, `resolve`, `query`, or `diff`. Use `--json` for structured standalone CLI output. In JSON mode, global console messages from configuration and integrations go to stderr. `--config` selects a configuration file, with source and output paths resolved from its parent directory. Use `build --dry-run` to preview output paths and `build --overwrite` to replace changed artifacts.
+With the author extension, run `lenso design init` to create a shared contract and an ES-module author config (`design.config.mts`), then `check`, `build`, `inspect`, `tokens`, `resolve`, `query`, or `diff`. Use `--json` and read `outputs.<command>` for a successful host result. In JSON mode, global console messages from configuration and integrations go to stderr. `--config` selects a configuration file, with source and output paths resolved from its parent directory. Use `build --dry-run` to preview output paths and `build --overwrite` to replace changed artifacts.
 
 For the four shared operations, the standalone CLI looks for `design.json` by
 default. Pass `--config design.config.ts` to run an author-side operation
@@ -166,7 +173,7 @@ contract.
 
 ## Migrate and verify
 
-In a project with an existing author config, run `lenso-design migrate --config design.config.ts` to materialize a v1 contract. The command checks the result and refuses to replace a different existing file. It preserves aliases and exports contextual differences. Review before adopting the JSON as the source of truth. Keep generators in the author config and remove equivalent declarations from other inputs. Use `lenso-design diff old.json --config design.json` to compare resolved values and `lenso-design impact <token> --config design.json` to trace affected aliases, components, patterns and declared source references.
+In a project with an existing author config, run `lenso design migrate --config design.config.ts` to materialize a v1 contract. The command checks the result and refuses to replace a different existing file. It preserves aliases and exports contextual differences. Review before adopting the JSON as the source of truth. Keep generators in the author config and remove equivalent declarations from other inputs. Use `lenso design diff old.json --config design.json` to compare resolved values and `lenso design impact <token> --config design.json` to trace affected aliases, components, patterns and declared source references.
 
 ## Native component distribution
 

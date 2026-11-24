@@ -16,12 +16,12 @@ Use the [working example](../design.json) for each shape. To migrate a project, 
 
 ## Automation
 
-| Operation | Lenso extension | Standalone author tool |
+| Operation | Published Wasm extension | Development author extension |
 | --- | --- | --- |
-| Inspect, resolve, query, check the shared contract | `lenso design <operation> --json`; read `outputs.<operation>` | `lenso-design <operation> --json`; read the result directly |
+| Inspect, resolve, query, check the shared contract | `lenso design <operation> --json`; read `outputs.<operation>` | `lenso design <operation> --json`; read `outputs.<operation>` |
 | Select dimensions with this checkout | Repeat `--context key=value` on resolve/query | Repeat `--context key=value` on resolve/query |
-| Validate generated native artifacts and source references | Run the author tool in CI | `lenso-design check --config design.config.ts --json` |
-| Generate or update files | Run the author tool | `lenso-design build`; review changes before using `--overwrite` |
+| Validate generated native artifacts and source references | Run the author tool in CI | `lenso design check --config design.config.ts --json` |
+| Generate or update files | Run the author tool | `lenso design build`; review changes before using `--overwrite` |
 
 In Bash, check both the host process and the validation result:
 

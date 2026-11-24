@@ -3,6 +3,6 @@ schema_version = 1
 
 [[cli.extensions]]
 id = "design"
-version = "=0.1.0-preview.3"
+version = "=0.1.0-preview.4"
 source = "extensions/lenso-cli/extension.toml"
 reads = ["design.json"]

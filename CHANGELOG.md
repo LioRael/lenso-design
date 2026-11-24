@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-preview.4
+
+- Register all 13 author and consumer commands under `lenso design` with the npm extension on hosts supporting structured process handlers.
+- Review local file replacements individually through Lenso prompts or JSON answers when upgrading generated components.
+- Lenso 1.1.2 supports the four Wasm contract commands. The npm executable remains available for authoring on that host.
+
 ## 0.1.0-preview.3
 
 - Add portable recipe parts, a themed Solid Dialog, rendered theme diagnostics and component-scoped source usage.

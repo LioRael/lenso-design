@@ -1,0 +1,24 @@
+schema_version = 1
+namespace = "design"
+
+[modules."button"]
+description = "Solid action button"
+root = "button"
+[[modules."button".releases]]
+version = "0.1.0"
+reference = "button-v0.1.0"
+[[modules."button".releases.targets]]
+language = "typescript"
+runtime = "node26"
+when = { framework = "solid", styles = "css-modules" }
+catalog = "button/css-modules/catalog.toml"
+[[modules."button".releases.targets]]
+language = "typescript"
+runtime = "node26"
+when = { framework = "solid", styles = "tailwind" }
+catalog = "button/tailwind/catalog.toml"
+[[modules."button".releases.targets]]
+language = "typescript"
+runtime = "node26"
+when = { framework = "solid", styles = "stylex" }
+catalog = "button/stylex/catalog.toml"

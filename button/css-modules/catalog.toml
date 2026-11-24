@@ -1,0 +1,24 @@
+schema_version = 1
+[modules."button"]
+version = "0.1.0"
+[modules."button".supports]
+language = ["typescript"]
+runtime = ["node26"]
+framework = ["solid"]
+styles = ["css-modules"]
+[resources]
+"button" = [{ path = "index.tsx", target = "index.tsx" }, { path = "recipe.ts", target = "recipe.ts" }, { path = "recipe.module.css", target = "recipe.module.css" }]
+[generator]
+schema_version = 1
+directory = "generated/button"
+files = [{ scope = "composition", template = "entry.ts.j2", target = "index.ts" }]
+[[generator.dependencies]]
+ecosystem = "npm"
+package = "solid-js"
+version = "2.0.3"
+module = "button"
+[[generator.dependencies]]
+ecosystem = "npm"
+package = "@solidjs/web"
+version = "2.0.3"
+module = "button"

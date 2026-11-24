@@ -1,0 +1,97 @@
+.gitignore
+  s_ba8dce57ba8904::t_45f9c823d5a4ca 1-10
+CHANGELOG.md
+  s_ba8dce57ba8904::t_f384bf8106c046 1-8
+LICENSE
+  s_ba8dce57ba8904::t_3a29d6e6beed38 1-21
+README.md
+  s_ba8dce57ba8904::t_14ed21bec6b99e 1-120
+design.config.ts
+  s_ba8dce57ba8904::t_296415e6606755 1-73
+design.json
+  s_ba8dce57ba8904::t_3c50f441072389 1-100
+examples/acme-button.tsx
+  s_ba8dce57ba8904::t_9327c1cfa6ddf0 1-18
+examples/brand.css
+  s_ba8dce57ba8904::t_1536aa60abedfc 1-10
+examples/brand.tokens.json
+  s_ba8dce57ba8904::t_8d9bc30a8d4eb9 1-13
+extensions/lenso-cli/Cargo.lock
+  s_ba8dce57ba8904::t_11d91aaffc5829 1-391
+extensions/lenso-cli/Cargo.toml
+  s_ba8dce57ba8904::t_80116de6411400 1-22
+extensions/lenso-cli/extension.toml
+  s_ba8dce57ba8904::t_f7df705d804e46 1-79
+extensions/lenso-cli/rust-toolchain.toml
+  s_ba8dce57ba8904::t_64d3a04ed5767c 1-3
+extensions/lenso-cli/src/contract.rs
+  s_ba8dce57ba8904::t_1203a23cf4e366 1-540
+extensions/lenso-cli/src/lib.rs
+  s_ba8dce57ba8904::t_82c5b4d87b205f 1-98
+lenso.registry.toml
+  s_ba8dce57ba8904::t_dff9e5a7bd1e0f 1-8
+lenso.toml
+  s_ba8dce57ba8904::t_016305eeff43c7 1-7
+licenses/extism-BSD-3-Clause.txt
+  s_ba8dce57ba8904::t_ab71e6e50fcbe2 1-11
+package.json
+  s_ba8dce57ba8904::t_992968356b1e86 1-50
+pnpm-lock.yaml
+  s_ba8dce57ba8904::t_c43b330aac3cf5 1-653
+scripts/build-wasm.mjs
+  s_ba8dce57ba8904::t_b698ba525ab562 1-42
+src/cli.ts
+  s_ba8dce57ba8904::t_1961e13874caeb 1-217
+src/compatibility.ts
+  s_ba8dce57ba8904::t_2d4f3049da9e52 1-74
+src/contract.ts
+  s_d5fd2ea6e10233::t_efa751e120b774 1-58
+src/css.ts
+  s_ba8dce57ba8904::t_da8115c4757cd8 1-125
+src/dtcg.ts
+  s_ba8dce57ba8904::t_47d87cd543978a 1-202
+src/presets.ts
+  s_ba8dce57ba8904::t_afdb85d5ca2542 1-121
+src/shadcn.ts
+  s_dab8d0fc1c0fe9::t_a0bc1cc7a8df9d 1-153
+src/stylex.ts
+  s_ba8dce57ba8904::t_a4f078a2f95916 1-40
+src/tailwind.ts
+  s_ba8dce57ba8904::t_0dc40f9bcc90af 1-45
+test/design.test.mjs
+  s_ba8dce57ba8904::t_a500631ecbf6b2 1-320
+tsconfig.json
+  s_ba8dce57ba8904::t_a9c6ceaa819313 1-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f146fccba655e65081cac5bf5b1b2e103f310bf5",
+  "prompts": {},
+  "sessions": {
+    "s_ba8dce57ba8904": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a20c7a-dc24-78e3-a145-e81d69c17cab",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "LioRael <leo@lenso.dev>"
+    },
+    "s_d5fd2ea6e10233": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a20cd5-ce48-7a73-9c01-065c6a983cd1",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "LioRael <leo@lenso.dev>"
+    },
+    "s_dab8d0fc1c0fe9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a20c30-1b0f-7a51-802f-a7e5ed3dc012",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "LioRael <leo@lenso.dev>"
+    }
+  }
+}

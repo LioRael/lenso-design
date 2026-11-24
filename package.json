@@ -1,0 +1,50 @@
+{
+  "name": "@lenso/design",
+  "version": "0.1.0-preview.1",
+  "description": "Open design infrastructure for humans, tools, and agents.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "lenso-design": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./css": "./dist/css.js",
+    "./dtcg": "./dist/dtcg.js",
+    "./presets": "./dist/presets.js",
+    "./shadcn": "./dist/shadcn.js",
+    "./stylex": "./dist/stylex.js",
+    "./tailwind": "./dist/tailwind.js",
+    "./contract": "./dist/contract.js"
+  },
+  "scripts": {
+    "build": "pnpm build:wasm && tsc",
+    "check": "tsc --noEmit",
+    "test": "pnpm build && node --test test/*.test.mjs",
+    "example": "node dist/cli.js build",
+    "build:wasm": "node scripts/build-wasm.mjs"
+  },
+  "dependencies": {
+    "css-tree": "3.2.1",
+    "postcss": "8.5.33"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.13",
+    "@stylexjs/babel-plugin": "0.19.2",
+    "@stylexjs/stylex": "0.19.2",
+    "@tailwindcss/node": "4.3.5",
+    "@types/css-tree": "3.2.0",
+    "@types/node": "^24.19.2",
+    "typescript": "^6.0.3"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LioRael/lenso-design.git"
+  }
+}

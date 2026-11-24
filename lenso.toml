@@ -1,0 +1,7 @@
+[cli]
+schema_version = 1
+
+[[cli.extensions]]
+id = "design"
+source = "extensions/lenso-cli/extension.toml"
+reads = ["design.json"]

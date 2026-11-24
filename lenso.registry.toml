@@ -1,0 +1,8 @@
+schema_version = 1
+
+[[extensions]]
+id = "design"
+path = "extensions/lenso-cli"
+tag = "design-v{version}"
+asset = "lenso-design-{version}.tar.gz"
+include = ["LICENSE", "THIRD_PARTY_LICENSES.txt"]

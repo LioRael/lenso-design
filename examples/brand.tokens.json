@@ -1,0 +1,13 @@
+{
+  "brand": {
+    "$type": "color",
+    "accent": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [0.16, 0.27, 0.9]
+      },
+      "$description": "An accent from a separate DTCG design source."
+    },
+    "accent-hover": { "$value": "{brand.accent}" }
+  }
+}

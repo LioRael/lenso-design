@@ -1,0 +1,10 @@
+:root {
+  --primary: #4338ca;
+  --primary-foreground: #ffffff;
+  --radius: 0.75rem;
+}
+
+[data-theme="dark"] {
+  --primary: #a5b4fc;
+  --primary-foreground: #1e1b4b;
+}

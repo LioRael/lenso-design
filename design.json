@@ -1,0 +1,100 @@
+{
+  "contractVersion": 1,
+  "dimensions": {
+    "appearance": {
+      "default": "light",
+      "values": [
+        "light",
+        "dark"
+      ]
+    }
+  },
+  "tokens": {
+    "surface.canvas": {
+      "type": "color",
+      "value": "#ffffff"
+    },
+    "brand.ink": {
+      "type": "color",
+      "value": "#27272a"
+    },
+    "action.primary.background": {
+      "type": "color",
+      "value": {
+        "ref": "brand.ink"
+      }
+    },
+    "action.primary.foreground": {
+      "type": "color",
+      "value": "#ffffff"
+    },
+    "control.radius": {
+      "type": "dimension",
+      "value": {
+        "ref": "radius.medium"
+      }
+    },
+    "radius.medium": {
+      "type": "dimension",
+      "value": "0.5rem"
+    }
+  },
+  "variants": [
+    {
+      "when": {
+        "appearance": "dark"
+      },
+      "tokens": {
+        "surface.canvas": {
+          "type": "color",
+          "value": "#111113"
+        },
+        "brand.ink": {
+          "type": "color",
+          "value": "#f4f4f5"
+        },
+        "action.primary.background": {
+          "type": "color",
+          "value": {
+            "ref": "brand.ink"
+          }
+        },
+        "action.primary.foreground": {
+          "type": "color",
+          "value": "#18181b"
+        }
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "acme-button",
+      "import": "@/components/ui/acme-button",
+      "export": "AcmeButton",
+      "description": "Primary action button.",
+      "roles": [
+        "action.primary.background",
+        "action.primary.foreground",
+        "control.radius"
+      ]
+    }
+  ],
+  "patterns": [
+    {
+      "id": "primary-action",
+      "description": "Use a primary action button for the main action in a flow.",
+      "components": [
+        "acme-button"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "id": "primary-action-label",
+      "description": "Name a primary action button after the operation it performs."
+    }
+  ],
+  "capabilities": [
+    "material.solid"
+  ]
+}

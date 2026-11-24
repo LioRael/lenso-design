@@ -1,0 +1,10 @@
+/node_modules/
+/dist/
+/examples/generated/
+/.release/
+
+/extensions/lenso-cli/target/
+/extensions/lenso-cli/design.wasm
+/extensions/lenso-cli/LICENSE
+/extensions/lenso-cli/THIRD_PARTY_LICENSES.txt
+/lenso.lock

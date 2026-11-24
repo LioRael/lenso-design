@@ -1,0 +1,79 @@
+schema_version = 1
+id = "design"
+version = "0.1.0-preview.1"
+host = ">=0.2.4, <0.3.0"
+
+[setup.defaults]
+reads = ["design.json"]
+
+[handlers."design/inspect"]
+type = "wasm"
+module = "design.wasm"
+function = "inspect"
+sha256 = "auto"
+
+[handlers."design/resolve"]
+type = "wasm"
+module = "design.wasm"
+function = "resolve"
+sha256 = "auto"
+
+[handlers."design/query"]
+type = "wasm"
+module = "design.wasm"
+function = "query"
+sha256 = "auto"
+
+[handlers."design/check"]
+type = "wasm"
+module = "design.wasm"
+function = "check"
+sha256 = "auto"
+
+[[workflows]]
+id = "design/inspect"
+steps = [{ id = "inspect", handler = "design/inspect" }]
+
+[[workflows]]
+id = "design/resolve"
+steps = [{ id = "resolve", handler = "design/resolve" }]
+
+[[workflows]]
+id = "design/query"
+steps = [{ id = "query", handler = "design/query" }]
+
+[[workflows]]
+id = "design/check"
+steps = [{ id = "check", handler = "design/check" }]
+
+[[commands]]
+path = ["design", "inspect"]
+provider = "design"
+workflow = "design/inspect"
+about = "Show the current design.json contract"
+
+[[commands]]
+path = ["design", "resolve"]
+provider = "design"
+workflow = "design/resolve"
+about = "Resolve a token from the current design.json"
+arguments = [
+  { name = "id", help = "Design token ID", positional = true },
+  { name = "appearance", help = "Appearance context value" },
+]
+
+[[commands]]
+path = ["design", "query"]
+provider = "design"
+workflow = "design/query"
+about = "Find components, patterns, and tokens in the current design.json"
+arguments = [
+  { name = "task", help = "Design task or search terms", positional = true },
+  { name = "appearance", help = "Appearance context value" },
+]
+
+[[commands]]
+path = ["design", "check"]
+provider = "design"
+workflow = "design/check"
+about = "Report design.json model and token diagnostics"

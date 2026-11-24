@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-preview.2
+
+- Share initialization, multi-axis selection, profiles, mappings and declared usage evidence across the contract tools. Add the v1 schema, migration and impact commands.
+- Add a DTCG Resolver input, native Solid recipe outputs, a scoped upstream Separator example, a Docs collection and a DESIGN.md front-matter adapter.
+- Verify the portable targets in Chrome with UI SDK keyboard behavior and resolved styles.
+
 ## 0.1.0-preview.1 - 2026-11-24
 
 - Introduce the version 1 declarative Design contract for live token resolution, inspection, validation, and queries.

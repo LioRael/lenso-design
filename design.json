@@ -1,4 +1,5 @@
 {
+  "$schema": "./spec/design-v1.schema.json",
   "contractVersion": 1,
   "dimensions": {
     "appearance": {
@@ -92,9 +93,50 @@
     {
       "id": "primary-action-label",
       "description": "Name a primary action button after the operation it performs."
+    },
+    {
+      "id": "primary-action-contrast",
+      "description": "Keep primary action labels readable.",
+      "contrast": {
+        "foreground": "action.primary.foreground",
+        "background": "action.primary.background",
+        "minimum": 4.5
+      }
     }
   ],
   "capabilities": [
     "material.solid"
+  ],
+  "usages": [
+    {
+      "token": "control.radius",
+      "styling": "css",
+      "path": "examples/acme-button.tsx",
+      "reference": "var(--acme-radius)"
+    }
+  ],
+  "mappings": [
+    {
+      "id": "neutral",
+      "roles": {
+        "button.brand": "action.primary.background",
+        "button.on-brand": "action.primary.foreground",
+        "button.radius": "control.radius"
+      }
+    }
+  ],
+  "profiles": [
+    {
+      "id": "primary-action",
+      "version": "1",
+      "roles": {
+        "action.primary.background": {
+          "type": "color"
+        },
+        "action.primary.foreground": {
+          "type": "color"
+        }
+      }
+    }
   ]
 }

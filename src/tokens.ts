@@ -160,6 +160,7 @@ export function createTokenReader(sets: readonly NamedSet[], dimensions: Dimensi
 
   return {
     list: () => [...ids],
+    declarations: (context?: Context) => Object.fromEntries(Array.from(select(context), ([id, entry]) => [id, entry.token])),
     get: (id: string, context?: Context) => select(context).get(id)?.token,
     resolve: (id: string, context?: Context) => resolver(select(context))(id),
     resolveAll: (context?: Context) => ids.map(resolver(select(context))),

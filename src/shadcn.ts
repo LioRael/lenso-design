@@ -39,10 +39,36 @@ function hasRootVariable(variables: Map<string, string[]>, name: string, seen: r
   });
 }
 
+/** Rewrite complete var(--name) declaration values in CSS-only items. */
+function rewriteCss(files: { path: string; content: string }[], bridge: Map<string, string>) {
+  return files.map(file => {
+    if (!file.path.endsWith(".css")) fail("shadcn.rewrite", `Use a bridge or a native variant for "${file.path}".`, file.path);
+    const sheet = postcss.parse(file.content, { from: file.path });
+    sheet.walkDecls(decl => {
+      const ref = /^var\(\s*(--[\w-]+)\s*\)$/.exec(decl.value);
+      if (ref && bridge.has(ref[1])) {
+        decl.value = bridge.get(ref[1])!;
+      } else if ([...bridge.keys()].some(name => decl.value.includes(name) || decl.prop === name)) {
+        fail("shadcn.rewrite", `Cannot safely rewrite "${decl.prop}: ${decl.value}".`, file.path);
+      }
+    });
+    const content = sheet.toString();
+    for (const name of bridge.keys()) {
+      if (new RegExp(name + "(?![a-zA-Z0-9_-])").test(content)) {
+        fail("shadcn.rewrite", `Unrewritten reference to "${name}".`, file.path);
+      }
+    }
+    return { ...file, content };
+  });
+}
+
 export function shadcn(options: {
   readonly output?: string;
   readonly items: readonly {
     readonly item: unknown;
+    /** Restrict this native item to specific targets. Other variants can share its name. */
+    readonly targets?: readonly string[];
+    readonly strategy?: "bridge" | "rewrite";
     readonly selector: string;
     readonly requirements: readonly (Requirement & { variable: string })[];
     readonly capabilities?: CompatibilityRequest["capabilities"];
@@ -53,6 +79,7 @@ export function shadcn(options: {
     readonly prefix?: string;
     readonly contexts?: CompatibilityRequest["contexts"];
     readonly stylesheets?: readonly Stylesheet[];
+    readonly availableCapabilities?: readonly string[];
   }[];
 }) {
   return defineIntegration({
@@ -86,7 +113,7 @@ export function shadcn(options: {
           }
         }
       });
-      for (const { item, selector, requirements, capabilities } of options.items) {
+      for (const { item, selector, requirements, capabilities, targets, strategy } of options.items) {
         if (!object(item) || typeof item.name !== "string" || !cssIdent.test(item.name) ||
             (item.type !== "registry:component" && item.type !== "registry:ui" && item.type !== "registry:block") ||
             !Array.isArray(item.files) || !item.files.length ||
@@ -95,8 +122,8 @@ export function shadcn(options: {
           fail("shadcn.item", "Expected a built shadcn UI, component, or block item with inline files.");
         }
         // The bridge must remain local to a component wrapper.
-        if (!/^\.[a-zA-Z_][a-zA-Z0-9_-]*$/.test(selector)) {
-          fail("shadcn.selector", "Use one scoped component class for the bridge.", selector);
+        if (!/^(?:\.[a-zA-Z_][a-zA-Z0-9_-]*|\[data-slot="[a-zA-Z_][a-zA-Z0-9_-]*"\])$/.test(selector)) {
+          fail("shadcn.selector", "Use one component class or a quoted data-slot selector for the bridge.", selector);
         }
         const names = new Set<string>();
         for (const { variable } of requirements) {
@@ -112,10 +139,13 @@ export function shadcn(options: {
           fail("shadcn.css-conflict", `Existing CSS for "${selector}" cannot be merged.`, selector);
         }
 
+        if (targets?.some(id => !options.targets.some(target => target.id === id))) fail("shadcn.target", "Item references an unknown target.", item.name);
         for (const targetOptions of options.targets) {
+          if (targets && !targets.includes(targetOptions.id)) continue;
           const { id, mapping, prefix, contexts } = targetOptions;
           if (!cssIdent.test(id)) fail("shadcn.target", `Invalid target "${id}".`, id);
-          const report = checkCompatibility(ctx, { requirements, mapping, contexts, capabilities });
+          const consumer = targetOptions.availableCapabilities === undefined ? ctx : { ...ctx, capabilities: targetOptions.availableCapabilities };
+          const report = checkCompatibility(consumer, { requirements, mapping, contexts, capabilities });
           for (const diagnostic of report.diagnostics) {
             ctx.report({ ...diagnostic, message: `${item.name} → ${id}: ${diagnostic.message}` });
           }
@@ -139,12 +169,12 @@ export function shadcn(options: {
           }
           if (required.size > 0) bindings.set(targetOptions, required);
 
+          if (strategy === "rewrite" && Object.keys(css).length) fail("shadcn.rewrite", "Inline Registry CSS requires a bridge.", item.name);
           ctx.emit({
             path: join(options.output ?? "generated/registry", id, `${item.name}.json`),
-            content: JSON.stringify({
-              ...item,
-              css: { ...css, [selector]: { ...existing, ...Object.fromEntries(bridge) } },
-            }, null, 2) + "\n",
+            content: JSON.stringify(strategy === "rewrite"
+              ? { ...item, files: rewriteCss(item.files, bridge) }
+              : { ...item, css: { ...css, [selector]: { ...existing, ...Object.fromEntries(bridge) } } }, null, 2) + "\n",
           });
         }
       }

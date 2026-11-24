@@ -11,8 +11,8 @@ export type ContractInput = {
   readonly context?: Readonly<Record<string, string>>;
 };
 type ContractResult = { readonly ok: boolean } & Readonly<Record<string, unknown>>;
-export type DesignContract = Required<Pick<DesignConfig, "contractVersion" | "tokens">> &
-  Pick<DesignConfig, "dimensions" | "variants" | "components" | "patterns" | "policies" | "capabilities">;
+export type DesignContract = { readonly $schema?: string } & Required<Pick<DesignConfig, "contractVersion" | "tokens">> &
+  Pick<DesignConfig, "dimensions" | "variants" | "components" | "patterns" | "policies" | "capabilities" | "profiles" | "mappings" | "usages">;
 
 type Exports = {
   memory: WebAssembly.Memory;

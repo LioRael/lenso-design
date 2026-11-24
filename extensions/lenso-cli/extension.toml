@@ -1,6 +1,6 @@
 schema_version = 1
 id = "design"
-version = "0.1.0-preview.1"
+version = "0.1.0-preview.2"
 host = ">=0.2.4, <0.3.0"
 
 [setup.defaults]
@@ -59,6 +59,7 @@ workflow = "design/resolve"
 about = "Resolve a token from the current design.json"
 arguments = [
   { name = "id", help = "Design token ID", positional = true },
+  { name = "context", help = "Context dimension key=value (repeatable)", kind = "list" },
   { name = "appearance", help = "Appearance context value" },
 ]
 
@@ -69,6 +70,7 @@ workflow = "design/query"
 about = "Find components, patterns, and tokens in the current design.json"
 arguments = [
   { name = "task", help = "Design task or search terms", positional = true },
+  { name = "context", help = "Context dimension key=value (repeatable)", kind = "list" },
   { name = "appearance", help = "Appearance context value" },
 ]
 

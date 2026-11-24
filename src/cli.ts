@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { link, lstat, mkdir, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
+import { contextOptions } from "./tokens.js";
 import { runDesignContract } from "./contract.js";
 import { loadDesign, projectPath } from "./index.js";
 import { DesignError, fail } from "./model.js";
@@ -12,7 +13,7 @@ import type { Artifact, Context } from "./model.js";
 const help = `Usage: lenso-design <command> [options]
 
 Commands:
-  init            Create a starter design.config.ts
+  init            Create design.json and an author configuration
   check           Validate tokens, mappings, and output generation
   build           Validate and write generated artifacts
   inspect         Show contexts, profiles, components, and mappings
@@ -20,6 +21,8 @@ Commands:
   capabilities    List declared design capabilities
   resolve <id>    Resolve one token
   query <task>    Search project design knowledge
+  migrate         Write a declarative design.json from an author config
+  impact <id>     List affected tokens, components, patterns, and declared usages
   diff <config>   Compare resolved tokens with another config
 
 Options:
@@ -32,10 +35,10 @@ Options:
 
 const starter = `import { defineDesign } from "@lenso/design";
 import { css } from "@lenso/design/css";
-import { neutral } from "@lenso/design/presets";
+import { readDesignContract } from "@lenso/design/contract";
 
 export default defineDesign({
-  presets: [neutral()],
+  ...await readDesignContract(new URL("./design.json", import.meta.url)),
   integrations: [css({ themes: [{ selector: '[data-theme="dark"]', context: { appearance: "dark" } }] })],
 });
 `;
@@ -127,8 +130,8 @@ async function run(args: string[]) {
   }
   if (values.json) globalThis.console = new Console(process.stderr);
   const print = (value: unknown) => process.stdout.write(JSON.stringify(value, null, values.json ? undefined : 2) + "\n");
-  const withArgument = ["resolve", "query", "diff"].includes(command);
-  const commands = ["init", "check", "build", "inspect", "tokens", "capabilities", "resolve", "query", "diff"];
+  const withArgument = ["resolve", "query", "diff", "impact"].includes(command);
+  const commands = ["init", "check", "build", "inspect", "tokens", "capabilities", "resolve", "query", "diff", "migrate", "impact"];
   if (!commands.includes(command) || extra !== undefined || withArgument !== (argument !== undefined)) {
     fail("cli.command", "Invalid command or arguments. Run lenso-design --help.");
   }
@@ -136,13 +139,26 @@ async function run(args: string[]) {
   if ((values.overwrite || values["dry-run"]) && command !== "build") {
     fail("cli.options", "--overwrite and --dry-run apply to build.");
   }
-  if (values.context.length && !["tokens", "resolve", "query", "diff"].includes(command)) {
+  if (values.context.length && !["tokens", "resolve", "query", "diff", "impact"].includes(command)) {
     fail("cli.options", "--context applies to tokens, resolve, query, and diff.");
   }
   if (command === "init") {
-    const path = resolve(values.config ?? "design.config.ts");
-    await writeArtifacts(await realpath(dirname(path)), [{ path: path.split(sep).at(-1)!, content: starter }], false);
-    print({ path });
+    const existingTs = values.config === undefined && await fileContents("design.config.ts") !== undefined;
+    const path = resolve(values.config ?? (existingTs ? "design.config.ts" : "design.config.mts"));
+    const root = await realpath(dirname(path));
+    const contract = JSON.stringify({
+      contractVersion: 1,
+      tokens: { "surface.canvas": { type: "color", value: "#ffffff" } },
+      dimensions: { appearance: { default: "light", values: ["light", "dark"] } },
+      variants: [{ when: { appearance: "dark" }, tokens: { "surface.canvas": { type: "color", value: "#18181b" } } }],
+    }, null, 2) + "\n";
+    const jsonOnly = path.endsWith(".json");
+    const contractName = jsonOnly ? path.split(sep).at(-1)! : "design.json";
+    const files: Artifact[] = [];
+    if (await fileContents(join(root, contractName)) === undefined) files.push({ path: contractName, content: contract });
+    if (!jsonOnly) files.push({ path: path.split(sep).at(-1)!, content: starter });
+    await writeArtifacts(root, files, false);
+    print({ path, contract: join(root, contractName) });
     return;
   }
 
@@ -162,6 +178,33 @@ async function run(args: string[]) {
   }
   const design = await loadDesign(values.config);
   switch (command) {
+    case "impact":
+      print(design.impact(argument, context));
+      break;
+    case "migrate": {
+      const base = design.tokens.declarations();
+      const variants = [];
+      const count = Object.values(design.contexts).reduce((total, axis) => total * axis.values.length, 1);
+      if (count > 256 || count * Object.keys(base).length > 16384) fail("contract.limit", "The design exceeds the contract verification budget.");
+      for (const when of contextOptions(design.contexts)) {
+        const changes = Object.entries(design.tokens.declarations(when)).flatMap(([id, value]) => {
+          return JSON.stringify(value) === JSON.stringify(base[id]) ? [] : [[id, value]];
+        });
+        if (changes.length) variants.push({ when, tokens: Object.fromEntries(changes) });
+      }
+      const contract = {
+        contractVersion: 1, tokens: base, dimensions: design.contexts, variants,
+        components: design.components, profiles: design.profiles, patterns: design.patterns,
+        policies: design.policies, mappings: design.mappings, capabilities: design.capabilities,
+        usages: design.usages,
+      };
+      const content = JSON.stringify(contract, null, 2) + "\n";
+      const checked = await runDesignContract(content, "check");
+      if (!checked.ok) { process.exitCode = 1; print(checked); break; }
+      await writeArtifacts(design.root, [{ path: "design.json", content }], false);
+      print({ ok: true, path: join(design.root, "design.json") });
+      break;
+    }
     case "inspect":
       print(design.inspect());
       break;

@@ -16,6 +16,24 @@ export const foundation = defineProfile({
   },
 });
 
+function profile(id: string, roles: Record<string, Token["type"]>) {
+  return defineProfile({ id, version: "1.0.0", roles: Object.fromEntries(
+    Object.entries(roles).map(([role, type]) => [role, { type }]),
+  ) });
+}
+
+export const typography = profile("typography", { "font.family.sans": "fontFamily", "font.size.body": "dimension", "font.weight.regular": "fontWeight" });
+export const layout = profile("layout", { "layout.readable": "dimension", "layout.breakpoint": "dimension" });
+export const controls = profile("controls", { "control.height": "dimension", "control.padding-inline": "dimension" });
+export const shape = profile("shape", { "control.radius": "dimension" });
+export const elevation = profile("elevation", { "elevation.raised": "string" });
+export const motion = profile("motion", { "motion.fast": "duration", "motion.ease": "cubicBezier" });
+export const material = profile("material", { "material.panel": "color" });
+export const feedback = profile("feedback", { "feedback.success": "color", "feedback.warning": "color", "feedback.error": "color", "feedback.info": "color" });
+export const navigation = profile("navigation", { "navigation.selected": "color" });
+export const dataViz = profile("data-viz", { "chart.blue": "color", "chart.orange": "color" });
+export const accessibility = profile("accessibility", { "focus.ring": "color", "focus.width": "dimension" });
+
 const light = {
   "surface.canvas": "#ffffff",
   "surface.raised": "#f7f7f9",
@@ -100,7 +118,7 @@ export function neutral() {
   }
   return definePreset({
     id: "neutral",
-    profiles: [foundation],
+    profiles: [foundation, typography, layout, controls, shape, elevation, motion, material, feedback, navigation, dataViz, accessibility],
     dimensions: {
       appearance: { default: "light", values: ["light", "dark"] },
       density: { default: "comfortable", values: ["comfortable", "compact"] },

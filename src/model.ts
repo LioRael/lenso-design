@@ -48,6 +48,8 @@ export type Pattern = {
   readonly components: readonly string[];
 };
 export type Policy = {
+  readonly severity?: "error" | "warning";
+  readonly contrast?: { foreground: string; background: string; minimum: number };
   readonly id: string;
   readonly description: string;
 };
@@ -86,6 +88,7 @@ export type DesignConfig = {
   readonly presets?: readonly Preset[];
   readonly profiles?: readonly Profile[];
   readonly sources?: readonly Source[];
+  readonly usages?: readonly TokenUsage[];
   readonly mappings?: readonly Mapping[];
   readonly capabilities?: readonly string[];
   readonly components?: readonly Component[];

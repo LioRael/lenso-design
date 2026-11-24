@@ -313,8 +313,152 @@ test("the standalone CLI uses the same live declarative kernel as the Wasm exten
   assert.equal(JSON.parse(run("check").stdout).checkedContexts, 2);
   const query = JSON.parse(run("query", "primary action").stdout);
   assert.equal(query.components[0].id, "acme-button");
-  assert.deepEqual(query.missing, ["usages"]);
+  assert.deepEqual(query.missing, []);
+  assert.ok((await readFile(new URL("../" + query.usages[0].path, import.meta.url), "utf8")).includes(query.usages[0].reference));
   const invalid = run("resolve", "unavailable");
   assert.equal(invalid.status, 1);
   assert.equal(JSON.parse(invalid.stdout).diagnostics[0].code, "token.missing");
+});
+
+test("init creates a shared contract and preserves edits on repeat", async t => {
+  const cwd = await mkdtemp(join(tmpdir(), "lenso-design-init-"));
+  t.after(() => rm(cwd, { force: true, recursive: true }));
+  const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+  const run = (...args) => spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8" });
+  await writeFile(join(cwd, "package.json"), JSON.stringify({ type: "commonjs" }));
+  assert.equal(run("init").status, 0);
+  assert.match(await readFile(join(cwd, "design.config.mts"), "utf8"), /readDesignContract/);
+  assert.equal(JSON.parse(run("resolve", "surface.canvas", "--context", "appearance=dark").stdout).value, "#18181b");
+  const contract = JSON.parse(await readFile(join(cwd, "design.json"), "utf8"));
+  contract.tokens.custom = { type: "number", value: 3 };
+  await writeFile(join(cwd, "design.json"), JSON.stringify(contract));
+  assert.equal(run("init").status, 0);
+  assert.equal(JSON.parse(run("resolve", "custom").stdout).value, 3);
+});
+
+test("author and Wasm reject duplicate pattern and policy identities", async () => {
+  const { runDesignContract } = await import("@lenso/design/contract");
+  for (const [field, entry, code] of [
+    ["patterns", { id: "one", description: "", components: [] }, "pattern.conflict"],
+    ["policies", { id: "one", description: "" }, "policy.conflict"],
+  ]) {
+    const config = { contractVersion: 1, tokens: {}, [field]: [entry, entry] };
+    assert.equal((await runDesignContract(JSON.stringify(config), "check")).diagnostics[0].code, code);
+    await assert.rejects(createDesign(config), error => error.diagnostic.code === code);
+  }
+});
+
+test("the upstream Separator keeps its files and rejects a missing theme variable", async () => {
+  const item = JSON.parse(await readFile(new URL("../examples/shadcn/separator.json", import.meta.url), "utf8"));
+  const result = await (await createDesign(example)).build();
+  const adapted = JSON.parse(result.artifacts.find(entry => entry.path.endsWith("/neutral/separator.json")).content);
+  assert.deepEqual(adapted.files, item.files);
+  assert.deepEqual(adapted.dependencies, item.dependencies);
+  assert.deepEqual(adapted.css['[data-slot="separator"]'], { "--border": "var(--ds-border-default)" });
+  const invalid = await createDesign({
+    tokens: { "border.default": color("#333") },
+    integrations: [shadcn({
+      items: [{ item, selector: '[data-slot="separator"]', requirements: [{ role: "border.default", type: "color", variable: "--border" }] }],
+      targets: [{ id: "missing" }],
+    })],
+  });
+  assert.equal((await invalid.check()).diagnostics[0].code, "shadcn.target-variable");
+});
+
+test("DTCG resolver selects a modifier and preserves aliases across sources", async () => {
+  const file = {
+    version: "2025.10",
+    sets: { base: { sources: [{ weight: { $type: "number", $value: 1 }, alias: { $type: "number", $value: "{weight}" } }] } },
+    modifiers: { theme: { default: "light", contexts: { light: [], dark: [{ weight: { $type: "number", $value: 2 } }] } } },
+    resolutionOrder: [{ $ref: "#/sets/base" }, { $ref: "#/modifiers/theme" }],
+  };
+  const reader = { read: async () => JSON.stringify(file) };
+  const source = await dtcg.resolver("design.resolver.json", { theme: "dark" }).load(reader);
+  const design = await createDesign(source);
+  assert.equal(design.tokens.resolve("alias").value, 2);
+  assert.deepEqual(design.tokens.resolve("alias").path, ["alias", "weight"]);
+  await assert.rejects(dtcg.resolver("design.resolver.json", { theme: "missing" }).load(reader), /modifier|context/i);
+});
+
+test("DESIGN.md retains author guidance and exports mapped tokens", async () => {
+  const { parseDesignMd, designMd } = await import("@lenso/design/design-md");
+  const text = "---\nname: Local\ncolors:\n  ink: '#222'\n---\nPrefer ink on light surfaces.\n";
+  assert.equal(parseDesignMd(text).prose, "Prefer ink on light surfaces.\n");
+  const design = await createDesign({ tokens: parseDesignMd(text).tokens,
+    integrations: [designMd.output({ name: "Theme", file: "DESIGN.md", mapping: { colors: { primary: "colors.ink" } } })] });
+  assert.equal(parseDesignMd((await design.build()).artifacts[0].content).tokens["colors.primary"].value, "#222");
+});
+
+test("migration preserves contextual aliases and leaves an existing contract intact", async t => {
+  const cwd = await mkdtemp(join(tmpdir(), "lenso-design-migration-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+  const config = {
+    tokens: { base: color("#fff"), ink: color(token("base")) },
+    dimensions: { density: { default: "normal", values: ["normal", "compact"] } },
+    variants: [{ when: { density: "compact" }, tokens: { base: color("#abc") } }],
+  };
+  const run = (...args) => spawnSync(process.execPath, [cli, ...args, "--json"], { cwd, encoding: "utf8" });
+  await writeFile(join(cwd, "design.config.ts"), "export default " + JSON.stringify(config));
+  assert.equal(run("migrate").status, 0);
+  const resolved = JSON.parse(run("resolve", "ink", "--context", "density=compact").stdout);
+  assert.deepEqual([resolved.path, resolved.value], [["ink", "base"], "#abc"]);
+  await writeFile(join(cwd, "design.json"), "{}");
+  assert.equal(run("migrate").status, 1);
+  assert.equal(await readFile(join(cwd, "design.json"), "utf8"), "{}");
+});
+
+test("contrast policies agree on errors, warnings and colors requiring rendering", async () => {
+  const { runDesignContract } = await import("@lenso/design/contract");
+  for (const [foreground, severity, code] of [["#aaa", "error", "policy.contrast"], ["#aaa", "warning", "policy.contrast"], ["#0008", "error", "policy.unverified"]]) {
+    const config = { contractVersion: 1, tokens: { ink: color(foreground), paper: color("#fff") },
+      policies: [{ id: "readable", description: "Contrast", severity, contrast: { foreground: "ink", background: "paper", minimum: 4.5 } }] };
+    const checks = [await runDesignContract(JSON.stringify(config), "check"), await (await createDesign(config)).check()];
+    for (const check of checks) {
+      assert.equal(check.diagnostics[0].code, code);
+      assert.equal(check.ok, severity === "warning" || code === "policy.unverified");
+    }
+  }
+});
+
+test("dimension mappings preserve contextual values and require a conversion basis", async () => {
+  const { deriveDesign } = await import("@lenso/design/derive");
+  const config = { tokens: { radius: dimension("8px") }, dimensions: { density: { default: "normal", values: ["normal", "compact"] } },
+    variants: [{ when: { density: "compact" }, tokens: { radius: dimension("4px") } }] };
+  const rule = { type: "dimension", source: "radius", factor: 2, unit: "rem" };
+  await assert.rejects(deriveDesign(config, { large: rule }), /rootFontSizePx/);
+  const design = await createDesign(await deriveDesign(config, { large: { ...rule, rootFontSizePx: 16 } }));
+  assert.equal(design.tokens.resolve("large").value, "1rem");
+  assert.equal(design.tokens.resolve("large", { density: "compact" }).value, "0.5rem");
+});
+
+test("Registry variants require the native material or an explicitly authored fallback", async () => {
+  const definition = (target, source, capability) => ({
+    targets: [target], selector: ".toggle", requirements: [], capabilities: [{ id: capability }],
+    item: { name: "toggle", type: "registry:ui", files: [{ path: "toggle.tsx", type: "registry:ui", content: source }] },
+  });
+  const glass = definition("glass", 'export { GlassToggleButton as Toggle } from "@lenso/ui-solid/glass-toggle-button";', "material.glass");
+  const solid = definition("solid", 'export { Toggle } from "@ui-sdk/solid/toggle";', "material.solid");
+  const build = async glassCapabilities => (await createDesign({ integrations: [shadcn({
+    items: [glass, solid],
+    targets: [{ id: "glass", availableCapabilities: glassCapabilities }, { id: "solid", availableCapabilities: ["material.solid"] }],
+  })] })).build();
+  assert.equal((await build(["material.solid"])).diagnostics[0].code, "capability.missing");
+  const result = await build(["material.glass"]);
+  assert.deepEqual(result.diagnostics, []);
+  assert.deepEqual(result.artifacts.map(item => JSON.parse(item.content).files[0].content), [glass.item.files[0].content, solid.item.files[0].content]);
+});
+
+test("Docs collection reads the contract through its watched source", async () => {
+  const { designCollection } = await import("@lenso/design/docs");
+  const collection = designCollection();
+  const paths = [];
+  const entries = await collection.load({ readText: async path => {
+    paths.push(path);
+    return readFile(new URL("../design.json", import.meta.url), "utf8");
+  } });
+  assert.deepEqual(paths, ["design.json"]);
+  const components = entries.find(e => e.id === "components");
+  assert.match(collection.template(components), /@\/components\/ui\/acme-button/);
+  assert.deepEqual(components.sources, paths);
 });

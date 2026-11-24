@@ -150,7 +150,31 @@ function exportValue(definition: Token, value: string | number, id: string): unk
   fail("dtcg.export", `Token "${id}" cannot be represented by the supported DTCG types.`, id);
 }
 
+export { resolveDtcg } from "./resolver.js";
+
 export const dtcg = {
+  resolver(path: string, context: Context = {}) {
+    return defineSource({
+      name: path,
+      async load({ read }) {
+        const { resolveDtcg, formatResolvedValue } = await import("./resolver.js");
+        const result = await resolveDtcg(path, read, context);
+        const tokens = new Map<string, Token>();
+        for (const entry of result.tokens.values()) {
+          if (!entry.type || !types.has(entry.type)) fail("dtcg.type", `Cannot project DTCG "${entry.type}" token "${entry.id}" into the scalar Design contract.`, entry.id);
+          const value = formatResolvedValue(entry.type, entry.value);
+          const alias = typeof entry.raw === "string" && /^\{([^{}]+)\}$/.exec(entry.raw);
+          const definition: Token = {
+            type: entry.type as TokenType, description: entry.description, extensions: entry.extensions,
+            value: alias ? token(alias[1]) : importValue(entry.type, value, entry.id),
+          };
+          if (!alias) originalValues.set(definition, value);
+          tokens.set(entry.id, definition);
+        }
+        return { tokens: Object.fromEntries(tokens) };
+      },
+    });
+  },
   source(path: string) {
     return defineSource({
       name: path,

@@ -87,15 +87,76 @@ struct Pattern {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
+struct Contrast {
+    foreground: String,
+    background: String,
+    minimum: f64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 struct Policy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    contrast: Option<Contrast>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    severity: Option<String>,
     id: String,
     description: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct Role {
+    #[serde(rename = "type")]
+    kind: TokenType,
+    #[serde(default)]
+    optional: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct Profile {
+    id: String,
+    version: String,
+    roles: BTreeMap<String, Role>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct Mapping {
+    id: String,
+    roles: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum Styling {
+    Css,
+    Tailwind,
+    Stylex,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct Usage {
+    token: String,
+    styling: Styling,
+    path: String,
+    reference: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct Contract {
+    #[serde(rename = "$schema", default)]
+    _schema: Option<String>,
     contract_version: u32,
+    #[serde(default)]
+    usages: Vec<Usage>,
+    #[serde(default)]
+    profiles: Vec<Profile>,
+    #[serde(default)]
+    mappings: Vec<Mapping>,
     #[serde(default)]
     dimensions: BTreeMap<String, Axis>,
     tokens: Tokens,
@@ -117,7 +178,53 @@ struct Input {
     id: Option<String>,
     task: Option<String>,
     appearance: Option<String>,
+    #[serde(deserialize_with = "read_context")]
     context: Context,
+}
+
+fn read_context<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Context, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Arguments {
+        Map(Context),
+        List(Vec<String>),
+    }
+    match Arguments::deserialize(deserializer)? {
+        Arguments::Map(context) => Ok(context),
+        Arguments::List(entries) => {
+            let mut context = Context::new();
+            for entry in entries {
+                let (axis, value) = entry
+                    .split_once('=')
+                    .ok_or_else(|| serde::de::Error::custom("Expected --context key=value."))?;
+                if axis.is_empty()
+                    || value.is_empty()
+                    || context.insert(axis.into(), value.into()).is_some()
+                {
+                    return Err(serde::de::Error::custom(
+                        "Expected a unique, nonempty --context key=value.",
+                    ));
+                }
+            }
+            Ok(context)
+        }
+    }
+}
+
+fn unique_ids<'a>(
+    ids: impl Iterator<Item = &'a str>,
+    kind: &str,
+    code: &'static str,
+) -> Result<()> {
+    let mut seen = BTreeSet::new();
+    for id in ids {
+        if id.trim().is_empty() || !seen.insert(id) {
+            return Err(error(code, format!("Empty or duplicate {kind} ID '{id}'.")));
+        }
+    }
+    Ok(())
 }
 
 fn token_id(id: &str) -> bool {
@@ -131,6 +238,26 @@ fn token_id(id: &str) -> bool {
         }
     }
     true
+}
+
+fn hex_luminance(color: &str) -> Option<f64> {
+    let hex = color.strip_prefix('#')?;
+    if !hex.bytes().all(|b| b.is_ascii_hexdigit()) || !matches!(hex.len(), 3 | 6) {
+        return None;
+    }
+    let step = hex.len() / 3;
+    let mut result = 0.0;
+    for (i, weight) in [0.2126, 0.7152, 0.0722].iter().enumerate() {
+        let channel = u8::from_str_radix(&hex[i * step..(i + 1) * step], 16).ok()?;
+        let v = f64::from(if step == 1 { channel * 17 } else { channel }) / 255.0;
+        result += weight
+            * if v <= 0.04045 {
+                v / 12.92
+            } else {
+                ((v + 0.055) / 1.055).powf(2.4)
+            };
+    }
+    Some(result)
 }
 
 fn target(token: &Token) -> Option<&str> {
@@ -174,7 +301,7 @@ impl Contract {
         }
         let mut combinations = 1usize;
         for (name, axis) in &self.dimensions {
-            if name.is_empty()
+            if !token_id(name)
                 || !axis.values.contains(&axis.default)
                 || axis.values.iter().any(String::is_empty)
                 || axis.values.iter().collect::<BTreeSet<_>>().len() != axis.values.len()
@@ -248,6 +375,96 @@ impl Contract {
                 "component.definition",
                 "Components need unique IDs, import/export names, and existing token roles.",
             ));
+        }
+        unique_ids(
+            self.patterns.iter().map(|p| p.id.as_str()),
+            "pattern",
+            "pattern.conflict",
+        )?;
+        unique_ids(
+            self.policies.iter().map(|p| p.id.as_str()),
+            "policy",
+            "policy.conflict",
+        )?;
+        unique_ids(
+            self.profiles.iter().map(|p| p.id.as_str()),
+            "profile",
+            "profile.conflict",
+        )?;
+        unique_ids(
+            self.mappings.iter().map(|p| p.id.as_str()),
+            "mapping",
+            "mapping.conflict",
+        )?;
+        let mut roles = BTreeMap::new();
+        for profile in &self.profiles {
+            for (id, role) in &profile.roles {
+                if roles
+                    .insert(id, role.kind)
+                    .is_some_and(|previous| previous != role.kind)
+                {
+                    return Err(error(
+                        "profile.conflict",
+                        format!("Profiles disagree on '{id}'."),
+                    ));
+                }
+                if !match self.tokens.get(id) {
+                    Some(token) => token.kind == role.kind,
+                    None => role.optional,
+                } {
+                    return Err(error(
+                        "profile.role",
+                        format!(
+                            "Profile '{}' requires role '{id}' of the declared type.",
+                            profile.id
+                        ),
+                    ));
+                }
+            }
+        }
+        for mapping in &self.mappings {
+            for (role, target) in &mapping.roles {
+                if !self.tokens.contains_key(target) {
+                    return Err(error(
+                        "mapping.target",
+                        format!(
+                            "Mapping '{}' role '{role}' references missing '{target}'.",
+                            mapping.id
+                        ),
+                    ));
+                }
+            }
+        }
+        for usage in &self.usages {
+            if !self.tokens.contains_key(&usage.token)
+                || usage.path.trim().is_empty()
+                || usage.reference.trim().is_empty()
+            {
+                return Err(error(
+                    "usage.definition",
+                    format!("Invalid usage for token '{}'.", usage.token),
+                ));
+            }
+        }
+        for policy in &self.policies {
+            if policy
+                .severity
+                .as_deref()
+                .is_some_and(|v| !matches!(v, "error" | "warning"))
+                || policy.contrast.as_ref().is_some_and(|rule| {
+                    !(1.0..=21.0).contains(&rule.minimum)
+                        || [&rule.foreground, &rule.background].into_iter().any(|id| {
+                            self.tokens
+                                .get(id)
+                                .is_none_or(|t| t.kind != TokenType::Color)
+                        })
+                })
+            {
+                return Err(error(
+                    "policy.definition",
+                    format!("Invalid contrast policy '{}'.", policy.id),
+                ));
+            }
         }
         for pattern in &self.patterns {
             if pattern
@@ -330,26 +547,68 @@ impl Contract {
                 })
                 .collect();
         }
-        let mut diagnostics = Vec::new();
+        let mut errors = Vec::new();
+        let mut warnings = Vec::new();
         let mut checked_contexts = 0;
         'contexts: for context in contexts {
             let tokens = self.select(&context);
             for id in tokens.keys() {
                 if let Err(diagnostic) = trace(&tokens, id) {
-                    diagnostics.push(json!({
+                    errors.push(json!({
                         "code":diagnostic.code,"severity":diagnostic.severity,
                         "message":diagnostic.message,"path":id,"context":context
                     }));
-                    if diagnostics.len() == 64 {
+                    if errors.len() >= 64 {
                         break 'contexts;
                     }
                 }
             }
+            for policy in &self.policies {
+                let Some(rule) = &policy.contrast else {
+                    continue;
+                };
+                let luminance = |id: &str| {
+                    trace(&tokens, id)
+                        .ok()
+                        .and_then(|(_, token)| token.value.as_str())
+                        .and_then(hex_luminance)
+                };
+                let (code, severity, message) =
+                    match (luminance(&rule.foreground), luminance(&rule.background)) {
+                        (Some(fg), Some(bg)) => {
+                            let ratio = (fg.max(bg) + 0.05) / (fg.min(bg) + 0.05);
+                            if ratio >= rule.minimum {
+                                continue;
+                            }
+                            (
+                                "policy.contrast",
+                                policy.severity.as_deref().unwrap_or("error"),
+                                format!("Contrast {ratio:.2} is below {}.", rule.minimum),
+                            )
+                        }
+                        _ => (
+                            "policy.unverified",
+                            "warning",
+                            "Render this color pair to measure contrast.".to_owned(),
+                        ),
+                    };
+                let list = if severity == "error" {
+                    &mut errors
+                } else {
+                    &mut warnings
+                };
+                if list.len() < 64 {
+                    list.push(json!({"code":code,"severity":severity,"message":message,"path":policy.id,"context":context}));
+                }
+                if errors.len() >= 64 {
+                    break 'contexts;
+                }
+            }
             checked_contexts += 1;
         }
-        Ok(
-            json!({"ok":diagnostics.is_empty(),"diagnostics":diagnostics,"checkedContexts":checked_contexts}),
-        )
+        let ok = errors.is_empty();
+        errors.extend(warnings.into_iter().take(64 - errors.len()));
+        Ok(json!({"ok":ok,"diagnostics":errors,"checkedContexts":checked_contexts}))
     }
 
     fn query(&self, selected: &BTreeMap<&str, &Token>, task: &str) -> Result<Value> {
@@ -392,18 +651,27 @@ impl Contract {
                 tokens.push(resolve(selected, id)?);
             }
         }
+        let ids: BTreeSet<_> = tokens
+            .iter()
+            .filter_map(|token| token["id"].as_str())
+            .collect();
+        let usages: Vec<_> = self
+            .usages
+            .iter()
+            .filter(|usage| ids.contains(usage.token.as_str()))
+            .collect();
         let missing = [
             ("components", components.is_empty()),
             ("patterns", patterns.is_empty()),
             ("tokens", tokens.is_empty()),
-            ("usages", true),
+            ("usages", usages.is_empty()),
         ]
         .into_iter()
         .filter_map(|(name, missing)| missing.then_some(name))
         .collect::<Vec<_>>();
         Ok(
             json!({"ok":true,"components":components,"patterns":patterns,"policies":policies,
-            "tokens":tokens,"usages":[],"missing":missing,"diagnostics":[]}),
+            "tokens":tokens,"usages":usages,"missing":missing,"diagnostics":[]}),
         )
     }
 
@@ -413,14 +681,19 @@ impl Contract {
             return Ok(
                 json!({"ok":true,"contractVersion":self.contract_version,"contexts":self.dimensions,
                 "tokens":self.tokens.keys().collect::<Vec<_>>(),"components":self.components,
-                "patterns":self.patterns,"policies":self.policies,"capabilities":self.capabilities}),
+                "profiles":self.profiles,"mappings":self.mappings,"patterns":self.patterns,"policies":self.policies,"capabilities":self.capabilities}),
             );
         }
         if operation == "check" {
             return self.check();
         }
-        if let Some(appearance) = input.appearance {
-            input.context.insert("appearance".into(), appearance);
+        if let Some(appearance) = input.appearance
+            && input
+                .context
+                .insert("appearance".into(), appearance)
+                .is_some()
+        {
+            return Err(error("request.input", "Appearance was supplied twice."));
         }
         let selected = self.select(&self.context(&input.context)?);
         match operation {

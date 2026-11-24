@@ -1,6 +1,8 @@
 import { readFile, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { readDesignContract } from "./contract.js";
+import { checkContrast } from "./policies.js";
 import { checkCompatibility } from "./compatibility.js";
 import type { CompatibilityRequest } from "./compatibility.js";
 import { DesignError, fail, tokenId } from "./model.js";
@@ -10,9 +12,16 @@ import { contextOptions, createTokenReader } from "./tokens.js";
 export * from "./model.js";
 export type { CompatibilityRequest, Requirement } from "./compatibility.js";
 
-export async function loadDesign(configPath = "design.config.ts") {
-  const absolute = await realpath(resolve(configPath));
-  const config: DesignConfig | undefined = (await import(pathToFileURL(absolute).href)).default;
+export async function loadDesign(configPath?: string) {
+  let absolute: string;
+  try {
+    absolute = await realpath(resolve(configPath ?? "design.config.ts"));
+  } catch (error) {
+    if (configPath || !(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+    absolute = await realpath(resolve("design.config.mts"));
+  }
+  const config: DesignConfig | undefined = absolute.endsWith(".json")
+    ? await readDesignContract(absolute) : (await import(pathToFileURL(absolute).href)).default;
   if (!config || typeof config !== "object" || Array.isArray(config)) {
     fail("config.export", `"${configPath}" must default-export a design configuration.`, configPath);
   }
@@ -32,7 +41,7 @@ export function projectPath(root: string, path: string): string {
 function unique<T extends { id: string }>(kind: string, entries: readonly T[]): readonly T[] {
   const seen = new Set<string>();
   for (const { id } of entries) {
-    if (seen.has(id)) fail(`${kind}.conflict`, `Duplicate ${kind} "${id}".`, id);
+    if (!id.trim() || seen.has(id)) fail(`${kind}.conflict`, `Duplicate ${kind} "${id}".`, id);
     seen.add(id);
   }
   return entries;
@@ -47,7 +56,7 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
   for (const dimensions of [...presets.map(preset => preset.dimensions), config.dimensions]) {
     for (const [id, dimension] of Object.entries(dimensions ?? {})) {
       const previous = axes.get(id);
-      if (!tokenId.test(id) || !dimension.values.includes(dimension.default) ||
+      if (!tokenId.test(id) || dimension.values.includes("") || !dimension.values.includes(dimension.default) ||
           new Set(dimension.values).size !== dimension.values.length) {
         fail("context.definition", `Invalid dimension "${id}".`, id);
       }
@@ -116,10 +125,16 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
       }
     }
     for (const context of contextOptions(contexts)) {
+      let valid = true;
       tokens.inspect(context, error => {
+        valid = false;
         if (!(error instanceof DesignError)) throw error;
         report({ ...error.diagnostic, context });
       });
+      if (valid) for (const policy of policies) {
+        const issue = checkContrast(policy, tokens, context);
+        if (issue) report(issue);
+      }
     }
     for (const { id, roles } of mappings) {
       for (const [role, target] of Object.entries(roles)) {
@@ -144,7 +159,7 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
   async function build() {
     const diagnostics = validate();
     const artifacts = new Map<string, Artifact>();
-    const usages: TokenUsage[] = [];
+    const usages: TokenUsage[] = [...config.usages ?? []];
     const checks: ArtifactCheck[] = [];
     const hasErrors = () => diagnostics.some(({ severity }) => severity === "error");
     async function collect(action: () => void | Promise<void>) {
@@ -153,6 +168,26 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
       } catch (error) {
         if (!(error instanceof DesignError)) throw error;
         diagnostics.push(error.diagnostic);
+      }
+    }
+    if (!hasErrors()) {
+      const files = new Map<string, string>();
+      for (const usage of config.usages ?? []) {
+        await collect(async () => {
+          if (!tokens.get(usage.token)) fail("usage.token", `Unknown usage token "${usage.token}".`, usage.path);
+          let content = files.get(usage.path);
+          if (content === undefined) {
+            try { content = await readProjectFile(usage.path); }
+            catch (error) {
+              if (error instanceof DesignError) throw error;
+              fail("usage.file", `Cannot read usage source "${usage.path}".`, usage.path);
+            }
+            files.set(usage.path, content);
+          }
+          if (!usage.reference.trim() || !content.includes(usage.reference)) {
+            fail("usage.reference", `Missing reference "${usage.reference}" in "${usage.path}".`, usage.path);
+          }
+        });
       }
     }
     if (!hasErrors()) {
@@ -182,7 +217,7 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
   }
 
   return {
-    ...design, validate, build, patterns, policies,
+    ...design, tokens, validate, build, patterns, policies, usages: config.usages ?? [],
     async check() {
       const { ok, artifacts, diagnostics } = await build();
       return { ok, diagnostics, artifacts: artifacts.map(({ path }) => path) };
@@ -201,6 +236,19 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
         return a?.value === b?.value && a?.type === b?.type
           ? [] : [{ id, before: a ?? null, after: b ?? null }];
       });
+    },
+    impact(id: string, context?: Context) {
+      tokens.resolve(id, context);
+      const affected = tokens.resolveAll(context).filter(entry => entry.path.includes(id)).map(entry => entry.id);
+      const ids = new Set(affected);
+      const consumers = components.filter(component => component.roles?.some(role => ids.has(role)));
+      const componentIds = new Set(consumers.map(component => component.id));
+      return {
+        tokens: affected,
+        components: consumers.map(component => component.id),
+        patterns: patterns.filter(pattern => pattern.components.some(component => componentIds.has(component))).map(pattern => pattern.id),
+        usages: (config.usages ?? []).filter(entry => ids.has(entry.token)),
+      };
     },
     async query(task: string, context?: Context) {
       const words = task.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];

@@ -4,16 +4,20 @@ import { readDesignContract } from "@lenso/design/contract";
 import { css, cssSource } from "@lenso/design/css";
 import { dtcg } from "@lenso/design/dtcg";
 import { neutral } from "@lenso/design/presets";
+import { defineRecipe, portableRecipe } from "@lenso/design/recipe";
 import { shadcn } from "@lenso/design/shadcn";
 import { stylex } from "@lenso/design/stylex";
 import { tailwind } from "@lenso/design/tailwind";
 
 const button = await readFile(new URL("./examples/acme-button.tsx", import.meta.url), "utf8");
+const separator = JSON.parse(await readFile(new URL("./examples/shadcn/separator.json", import.meta.url), "utf8"));
 const dark = { appearance: "dark" };
 const output = "examples/generated";
 
+const contract = await readDesignContract(new URL("./design.json", import.meta.url));
+
 export default defineDesign({
-  ...await readDesignContract(new URL("./design.json", import.meta.url)),
+  ...contract,
   presets: [neutral()],
   sources: [
     dtcg.source("./examples/brand.tokens.json"),
@@ -23,14 +27,7 @@ export default defineDesign({
     }),
   ],
   mappings: [
-    defineMapping({
-      id: "neutral",
-      roles: {
-        "button.brand": "action.primary.background",
-        "button.on-brand": "action.primary.foreground",
-        "button.radius": "control.radius",
-      },
-    }),
+    ...contract.mappings ?? [],
     defineMapping({
       id: "brand",
       roles: {
@@ -41,6 +38,28 @@ export default defineDesign({
     }),
   ],
   integrations: [
+    portableRecipe({
+      component: "examples/toggle/index.tsx",
+      dependencies: ["@ui-sdk/solid@0.1.0-beta.14", "solid-js@2.0.3", "@solidjs/web@2.0.3"],
+      output: `${output}/components`,
+      recipe: defineRecipe({
+        id: "bold-toggle",
+        base: { backgroundColor: { ref: "surface.canvas" }, color: { ref: "text.primary" }, borderRadius: { ref: "control.radius" } },
+        states: {
+          hover: { backgroundColor: { ref: "surface.raised" } },
+          "focus-visible": { outlineColor: { ref: "focus.ring" } },
+        },
+      }),
+    }),
+    shadcn({
+      output: `${output}/registry`,
+      items: [{
+        item: separator,
+        selector: '[data-slot="separator"]',
+        requirements: [{ role: "border.default", type: "color", variable: "--border" }],
+      }],
+      targets: [{ id: "neutral", stylesheets: [{ artifact: `${output}/tokens.css` }] }],
+    }),
     css({ output: `${output}/tokens.css`, themes: [{ selector: '[data-theme="dark"]', context: dark }] }),
     tailwind({
       output: `${output}/tailwind.css`,

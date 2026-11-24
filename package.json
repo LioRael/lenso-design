@@ -1,6 +1,6 @@
 {
   "name": "@lenso/design",
-  "version": "0.1.0-preview.1",
+  "version": "0.1.0-preview.2",
   "description": "Open design infrastructure for humans, tools, and agents.",
   "type": "module",
   "engines": {
@@ -10,7 +10,8 @@
     "lenso-design": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "spec"
   ],
   "exports": {
     ".": "./dist/index.js",
@@ -20,27 +21,42 @@
     "./shadcn": "./dist/shadcn.js",
     "./stylex": "./dist/stylex.js",
     "./tailwind": "./dist/tailwind.js",
-    "./contract": "./dist/contract.js"
+    "./contract": "./dist/contract.js",
+    "./schema/v1": "./spec/design-v1.schema.json",
+    "./docs": "./dist/docs.js",
+    "./recipe": "./dist/recipe.js",
+    "./design-md": "./dist/design-md.js",
+    "./derive": "./dist/derive.js"
   },
   "scripts": {
     "build": "pnpm build:wasm && tsc",
     "check": "tsc --noEmit",
     "test": "pnpm build && node --test test/*.test.mjs",
     "example": "node dist/cli.js build",
-    "build:wasm": "node scripts/build-wasm.mjs"
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "test:browser": "pnpm build && node test/portable-browser.mjs"
   },
   "dependencies": {
+    "@dsgraph/core": "0.9.0",
     "css-tree": "3.2.1",
-    "postcss": "8.5.33"
+    "postcss": "8.5.33",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@babel/core": "^7.29.13",
+    "@solidjs/vite-plugin": "3.0.1",
+    "@solidjs/web": "2.0.3",
     "@stylexjs/babel-plugin": "0.19.2",
     "@stylexjs/stylex": "0.19.2",
     "@tailwindcss/node": "4.3.5",
     "@types/css-tree": "3.2.0",
     "@types/node": "^24.19.2",
-    "typescript": "^6.0.3"
+    "@ui-sdk/solid": "0.1.0-beta.14",
+    "playwright-core": "1.65.1",
+    "solid-js": "2.0.3",
+    "typescript": "^6.0.3",
+    "vite": "8.3.8",
+    "@ui-sdk/core": "0.1.0-beta.14"
   },
   "license": "MIT",
   "repository": {

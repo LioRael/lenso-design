@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { defineDesign, defineMapping } from "@lenso/design";
 import { readDesignContract } from "@lenso/design/contract";
+import { codeModules } from "@lenso/design/code";
 import { css, cssSource } from "@lenso/design/css";
 import { dtcg } from "@lenso/design/dtcg";
 import { neutral } from "@lenso/design/presets";
@@ -38,6 +39,19 @@ export default defineDesign({
     }),
   ],
   integrations: [
+    codeModules({
+      namespace: "design", output: `${output}/code`, version: "0.1.0",
+      reference: "button-v0.1.0", framework: "solid", runtime: "node26",
+      components: [{
+        component: "examples/button/index.tsx", description: "Solid action button",
+        dependencies: ["solid-js@2.0.3", "@solidjs/web@2.0.3"],
+        recipe: defineRecipe({
+          id: "button",
+          base: { backgroundColor: { ref: "action.primary.background" }, color: { ref: "action.primary.foreground" } },
+          states: { "focus-visible": { outlineColor: { ref: "focus.ring" } } },
+        }),
+      }],
+    }),
     portableRecipe({
       component: "examples/toggle/index.tsx",
       dependencies: ["@ui-sdk/solid@0.1.0-beta.14", "solid-js@2.0.3", "@solidjs/web@2.0.3"],

@@ -1,6 +1,6 @@
 {
   "name": "@lenso/design",
-  "version": "0.1.0-preview.4",
+  "version": "0.1.0-preview.5",
   "description": "Open design infrastructure for humans, tools, and agents.",
   "type": "module",
   "engines": {
@@ -26,6 +26,7 @@
     "./contract": "./dist/contract.js",
     "./schema/v1": "./spec/design-v1.schema.json",
     "./docs": "./dist/docs.js",
+    "./code": "./dist/code.js",
     "./recipe": "./dist/recipe.js",
     "./design-md": "./dist/design-md.js",
     "./derive": "./dist/derive.js",

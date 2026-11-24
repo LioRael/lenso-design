@@ -56,50 +56,63 @@ function compilePart(name: string, part: Part, recipeId: string, ctx: DesignCont
   return { name, css, classes: classes.join(" "), stylex: Object.fromEntries(stylex) };
 }
 
+export type RecipeSource = { recipe: Recipe; component: string; prefix?: string; dependencies?: readonly string[] };
+
+/** Compile native sources once for both registry formats. */
+export async function compileRecipe(options: RecipeSource, ctx: DesignContext & { read(path: string): Promise<string> }) {
+  const { recipe } = options;
+  if (!cssIdent.test(recipe.id)) fail("recipe.id", "Expected a CSS identifier.", recipe.id);
+  const names = variableNames(ctx, options.prefix);
+  const compiled = [compilePart("root", recipe, recipe.id, ctx, names)];
+  for (const [name, part] of Object.entries(recipe.parts ?? {})) {
+    if (!/^[a-z][A-Za-z0-9]*$/.test(name) || name === "root" || name in Object.prototype) {
+      fail("recipe.part", `Invalid or reserved part name "${name}".`, recipe.id);
+    }
+    compiled.push(compilePart(name, part, recipe.id, ctx, names));
+  }
+  function exportsFor(value: (part: typeof compiled[number]) => string) {
+    const parts = compiled.slice(1).map(part => `  ${part.name}: ${value(part)}`);
+    return `export const root = ${value(compiled[0])};\n` +
+      (parts.length ? `export const parts = {\n${parts.join(",\n")}\n};\n` : "");
+  }
+  const styles = Object.fromEntries(compiled.map(part => [part.name, part.stylex]));
+  const files = {
+    "css-modules": 'import styles from "./recipe.module.css";\n' + exportsFor(part => `styles.${part.name}`),
+    tailwind: exportsFor(part => JSON.stringify(part.classes)),
+    stylex: 'import * as stylex from "@stylexjs/stylex";\n' +
+      `const styles = stylex.create(${JSON.stringify(styles, null, 2)});\n` +
+      exportsFor(part => `stylex.props(styles.${part.name}).className`),
+  };
+  const variants = [];
+  const component = await ctx.read(options.component);
+  for (const [target, content] of Object.entries(files)) {
+    const sources = [
+      { name: "index.tsx", content: component },
+      { name: "recipe.ts", content },
+    ];
+    if (target === "css-modules") sources.push({ name: "recipe.module.css", content: compiled.flatMap(part => part.css).join("\n") });
+    const dependencies = [...options.dependencies ?? []];
+    if (target === "stylex") dependencies.push("@stylexjs/stylex");
+    variants.push({ target, sources, dependencies });
+  }
+  return variants;
+}
+
 /** Emit interchangeable static class modules beside the same component source. */
-export function portableRecipe(options: { recipe: Recipe; component: string; output: string; prefix?: string; dependencies?: readonly string[] }) {
+export function portableRecipe(options: RecipeSource & { output: string }) {
   return defineIntegration({
     name: "portable-recipe",
     async generate(ctx) {
       const { recipe } = options;
-      if (!cssIdent.test(recipe.id)) fail("recipe.id", "Expected a CSS identifier.", recipe.id);
-      const names = variableNames(ctx, options.prefix);
-      const compiled = [compilePart("root", recipe, recipe.id, ctx, names)];
-      for (const [name, part] of Object.entries(recipe.parts ?? {})) {
-        if (!/^[a-z][A-Za-z0-9]*$/.test(name) || name === "root" || name in Object.prototype) {
-          fail("recipe.part", `Invalid or reserved part name "${name}".`, recipe.id);
-        }
-        compiled.push(compilePart(name, part, recipe.id, ctx, names));
-      }
-      function exportsFor(value: (part: typeof compiled[number]) => string) {
-        const parts = compiled.slice(1).map(part => `  ${part.name}: ${value(part)}`);
-        return `export const root = ${value(compiled[0])};\n` +
-          (parts.length ? `export const parts = {\n${parts.join(",\n")}\n};\n` : "");
-      }
-      const styles = Object.fromEntries(compiled.map(part => [part.name, part.stylex]));
-      const files = {
-        "css-modules": 'import styles from "./recipe.module.css";\n' + exportsFor(part => `styles.${part.name}`),
-        tailwind: exportsFor(part => JSON.stringify(part.classes)),
-        stylex: 'import * as stylex from "@stylexjs/stylex";\n' +
-          `const styles = stylex.create(${JSON.stringify(styles, null, 2)});\n` +
-          exportsFor(part => `stylex.props(styles.${part.name}).className`),
-      };
-      const component = await ctx.read(options.component);
-      for (const [target, content] of Object.entries(files)) {
+      for (const { target, sources, dependencies } of await compileRecipe(options, ctx)) {
         const folder = join(options.output, target, recipe.id);
-        const sources = [
-          { name: "index.tsx", content: component },
-          { name: "recipe.ts", content },
-        ];
-        if (target === "css-modules") sources.push({ name: "recipe.module.css", content: compiled.flatMap(part => part.css).join("\n") });
         for (const source of sources) ctx.emit({ path: join(folder, source.name), content: source.content });
-        const native = target === "stylex" ? ["@stylexjs/stylex"] : [];
         ctx.emit({
           path: join(folder, "registry.json"),
           content: JSON.stringify({
             $schema: "https://ui.shadcn.com/schema/registry-item.json",
             name: recipe.id, type: "registry:block",
-            dependencies: [...options.dependencies ?? [], ...native],
+            dependencies,
             files: sources.map(source => ({
               path: source.name, type: "registry:file", target: `src/components/${recipe.id}/${source.name}`,
               content: source.content,

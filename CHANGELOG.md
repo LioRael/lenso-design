@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-preview.5
+
+- Export portable recipes as Lenso Code module directories through `@lenso/design/code`.
+- Distribute `@design/button` 0.1.0 for Solid with Tailwind, StyleX and CSS Modules through Code 0.3.8.
+- Verify selection, rendering, keyboard activation and upgrade conflict handling across three consumer projects.
+
 ## 0.1.0-preview.4
 
 - Register all 13 author and consumer commands under `lenso design` with the npm extension on hosts supporting structured process handlers.

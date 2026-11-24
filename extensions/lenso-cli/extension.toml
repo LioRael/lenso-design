@@ -1,6 +1,6 @@
 schema_version = 1
 id = "design"
-version = "0.1.0-preview.4"
+version = "0.1.0-preview.5"
 host = ">=0.2.4, <0.3.0"
 
 [setup.defaults]

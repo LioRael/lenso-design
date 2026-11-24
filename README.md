@@ -16,7 +16,7 @@ In an empty project with Lenso 1.1.2, save this as `design.json`:
 ```
 
 ```sh
-lenso ext add github-release:LioRael/lenso-design/design --id design --constraint '=0.1.0-preview.4'
+lenso ext add github-release:LioRael/lenso-design/design --id design --constraint '=0.1.0-preview.5'
 lenso design resolve surface --context appearance=dark --json
 ```
 
@@ -29,8 +29,8 @@ The npm author extension exposes all 13 commands under `lenso design`. It requir
 In a project using a compatible host, install the package and register its manifest.
 
 ```sh
-npm install @lenso/design@0.1.0-preview.4
-lenso ext add node_modules/@lenso/design/dist/extension.json --id design --constraint '=0.1.0-preview.4'
+npm install @lenso/design@0.1.0-preview.5
+lenso ext add node_modules/@lenso/design/dist/extension.json --id design --constraint '=0.1.0-preview.5'
 lenso design --help
 lenso design init
 lenso design check
@@ -180,6 +180,25 @@ In a project with an existing author config, run `lenso design migrate --config 
 The [Solid Toggle](examples/toggle/index.tsx) uses UI SDK for its accessible behavior. One recipe in the [example config](design.config.ts) generates three source variants. Each variant has an installable Registry item at `examples/generated/components/<target>/bold-toggle/registry.json`. Choose `tailwind`, `stylex` or `css-modules` to match the consumer's configured compiler. Import the theme CSS into the app. Use the ordinary shadcn CLI to add the chosen item. For upgrades, review the file diff and keep locally modified files at the overwrite prompt.
 
 Portable rules currently bind background, foreground, corner radius, inline padding, minimum height and outline color to typed tokens. States include hover, focus-visible and disabled. For other properties or layout/interaction models, provide a native implementation. Run `pnpm test:browser` with Chrome installed to compile all three variants and exercise the same Toggle in light and dark themes with the keyboard.
+
+### Distribute a component through Lenso Code
+
+The optional `codeModules` integration from `@lenso/design/code` builds a Code module directory. The [Button configuration](design.config.ts) compiles a single Solid implementation to Tailwind, StyleX and CSS Modules. The generated `lenso.modules.toml` indexes one component address with a language, runtime and two Code project conventions, `framework` and `styles`. Each matching catalog contains the native source files and its npm requirements. Code owns search, installation, file ownership and upgrades. Other Design integrations work independently.
+
+In a Solid project with a package.json, register the published Button catalog and choose your styling convention:
+
+```sh
+lenso ext add github-release:LioRael/lenso-cli/code --id code --constraint '=0.3.8' --input '{"repo":"LioRael/lenso-design","ref":"code-catalog","catalog":"lenso.modules.toml","format":"lenso-modules-v1","target":"src","native":{"npm":{"manifest":"package.json"}}}'
+lenso code config --language typescript --runtime node26 --convention framework=solid styles=tailwind
+lenso code preview @design/button
+lenso code add @design/button
+```
+
+Import `Button` from `./generated/button/assembly` in a file under `src/`. Configure your project's Solid and styling compilers, and load the theme variables used by the recipe (the Button release includes [theme.css](https://github.com/LioRael/lenso-design/blob/button-v0.1.0/theme.css)). In another project, set `styles=stylex` or `styles=css-modules` to install the same address with that implementation. A consumer needs Code and the selected native dependencies; Design runs in the author's build.
+
+After the author publishes a newer module version, run `lenso code update @design/button`. Code merges independent changes and asks how to resolve overlapping edits. For a GitHub-backed Code source, place the exported directory contents at the root of the configured repository and make the declared release reference resolve to that snapshot. This adapter emits a single release per build. The published `code-catalog` branch indexes `@design/button` and its `button-v0.1.0` release snapshot.
+
+The [consumer acceptance test](test/code-consumer.mjs) builds two local catalog versions and exercises three independent projects against published Code 0.3.8. Run `node test/code-consumer.mjs` after building, with Chrome and npm available. It checks dependency selection, browser rendering, keyboard activation and upgrade conflict handling.
 
 ### Portal and theme scope in the Dialog example
 

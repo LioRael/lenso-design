@@ -1,0 +1,123 @@
+examples/shadcn/separator.json
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 1-16
+src/docs.ts
+  s_ba8dce57ba8904::t_06e313c9b256ba 7-17,26-47
+  s_ba8dce57ba8904::t_d3f737ac13beca 1-6,18-25,48-51
+src/dtcg.ts
+  s_ba8dce57ba8904::t_e129d00c8ace61 153-154,156-177
+src/resolver.ts
+  s_ba8dce57ba8904::t_e129d00c8ace61 1-21
+spec/contract-v1.md
+  s_ba8dce57ba8904::t_ad4f9f53188572 34-35
+  s_ba8dce57ba8904::t_6e251a8611ac39 1-33
+extensions/lenso-cli/src/contract.rs
+  s_ba8dce57ba8904::t_8600b35b257135 90-95,99-102,228,243-262,446-465,566-594
+  s_ba8dce57ba8904::t_f39994284618c2 88-89,107-147,151-152,155-160,181,185-227,304,379-445,466-468,654-662,667,674,684,690-696
+  s_ba8dce57ba8904::t_ad4f9f53188572 550-551,557,561,595-606,609-611
+  s_ba8dce57ba8904::t_8a7b580be1d2e5 229
+src/recipe.ts
+  s_ba8dce57ba8904::t_985087cf4310dc 1-25,27-68,88-91
+  s_ba8dce57ba8904::t_ec69fc012223f9 26,69-87
+src/presets.ts
+  s_ba8dce57ba8904::t_bfabe4c32a3b0a 19-36,121
+test/design.test.mjs
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 316-317
+  s_ba8dce57ba8904::t_ad4f9f53188572 410-422
+  s_ba8dce57ba8904::t_a4547665f00e41 382-409
+  s_ba8dce57ba8904::t_e5707d3c0982ee 423-433
+  s_ba8dce57ba8904::t_ad78c0e1e14e9b 434-464
+  s_ba8dce57ba8904::t_6e251a8611ac39 322-327,329,331-381
+  s_ba8dce57ba8904::t_aa5c5986be3bdf 328,330
+extensions/lenso-cli/Cargo.toml
+  s_ba8dce57ba8904::t_3cbe8b207a8e26 3
+lenso.toml
+  s_ba8dce57ba8904::t_3cbe8b207a8e26 6
+examples/shadcn/LICENSE
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 1-21
+extensions/lenso-cli/extension.toml
+  s_ba8dce57ba8904::t_3cbe8b207a8e26 3
+  s_ba8dce57ba8904::t_f39994284618c2 62,73
+src/cli.ts
+  s_ba8dce57ba8904::t_0d0a4a7eb1bb30 7,24-25,133-134,142,181-184,186-187,189,191-207
+  s_ba8dce57ba8904::t_f39994284618c2 16,38,41,148-161
+  s_ba8dce57ba8904::t_bfabe4c32a3b0a 185,188,190
+  s_ba8dce57ba8904::t_b83a2e9f98a4b6 146-147
+src/contract.ts
+  s_ba8dce57ba8904::t_f39994284618c2 14-15
+README.md
+  s_ba8dce57ba8904::t_6f1b4da9db1845 158-170
+  s_ba8dce57ba8904::t_a4547665f00e41 5-24,120-121,137,139-155
+  s_ba8dce57ba8904::t_741e9cbb5a0741 94,115,118,156-157
+examples/shadcn/README.md
+  s_ba8dce57ba8904::t_6e251a8611ac39 1-5
+src/design-md.ts
+  s_ba8dce57ba8904::t_3cbe8b207a8e26 1-60
+src/index.ts
+  s_ba8dce57ba8904::t_f39994284618c2 44,59,162
+  s_ba8dce57ba8904::t_bfabe4c32a3b0a 220
+  s_ba8dce57ba8904::t_8600b35b257135 5,128,130,134-137
+  s_ba8dce57ba8904::t_0d0a4a7eb1bb30 4,23-24,240-251
+  s_ba8dce57ba8904::t_d3f737ac13beca 174-192
+  s_ba8dce57ba8904::t_03d510d925db05 15-22,173,252
+design.json
+  s_ba8dce57ba8904::t_d3f737ac13beca 117-140
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 2,109-116
+  s_ba8dce57ba8904::t_8600b35b257135 96-104
+spec/design-v1.schema.json
+  s_ba8dce57ba8904::t_8600b35b257135 337-366
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 1-336,367-463
+package.json
+  s_ba8dce57ba8904::t_e5707d3c0982ee 28-29
+  s_ba8dce57ba8904::t_d3f737ac13beca 13-14,24-25
+  s_ba8dce57ba8904::t_985087cf4310dc 26
+  s_ba8dce57ba8904::t_995a8e2ea3b815 42-43
+  s_ba8dce57ba8904::t_3cbe8b207a8e26 3,27,36-37
+  s_ba8dce57ba8904::t_23641c976c4b8f 54,58-59
+  s_ba8dce57ba8904::t_d3e00cc282addd 47-48,55-57
+  s_ba8dce57ba8904::t_c33a3a7fa55476 40
+examples/toggle/index.tsx
+  s_ba8dce57ba8904::t_985087cf4310dc 1-6
+src/policies.ts
+  s_ba8dce57ba8904::t_8600b35b257135 1-28
+src/derive.ts
+  s_ba8dce57ba8904::t_e5707d3c0982ee 1-52
+src/shadcn.ts
+  s_ba8dce57ba8904::t_92b7a6a0b45898 42-54,62-64,69-71,116,142,144,172,175-177
+  s_ba8dce57ba8904::t_ad78c0e1e14e9b 55-61,82,147-148
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 125-126
+src/model.ts
+  s_ba8dce57ba8904::t_f39994284618c2 91
+  s_ba8dce57ba8904::t_8600b35b257135 51-52
+design.config.ts
+  s_ba8dce57ba8904::t_985087cf4310dc 7,41-42,44-53
+  s_ba8dce57ba8904::t_d3f737ac13beca 17-18,20,30
+  s_ba8dce57ba8904::t_afe8bb5fd491a1 13,54-62
+  s_ba8dce57ba8904::t_23641c976c4b8f 43
+src/tokens.ts
+  s_ba8dce57ba8904::t_bfabe4c32a3b0a 163
+test/portable-browser.mjs
+  s_ba8dce57ba8904::t_3cbe8b207a8e26 2
+  s_ba8dce57ba8904::t_1d1a9651a74429 1,3-82
+CHANGELOG.md
+  s_ba8dce57ba8904::t_a4547665f00e41 3-8
+extensions/lenso-cli/Cargo.lock
+  s_ba8dce57ba8904::t_dfca61064ef0dc 146
+pnpm-lock.yaml
+  s_ba8dce57ba8904::t_575099ae38d046 11-13,20-22,27-32,48-59,63-65,69-72,140-147,151-168,185-373,386-388,395-404,425-431,456-469,477-480,575-577,584-587,603-611,619-623,628-641,656-662,677-727,731-735,738-742,843-852,855-886,906-1030,1060-1064,1071-1078,1098-1101,1117-1123,1128-1129,1191-1194,1201-1204,1213-1216,1225-1246,1249-1260,1269-1276,1287-1303,1305-1306
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f1e0ddbcb02a93237231cea2cb5455d9a1553b5a",
+  "prompts": {},
+  "sessions": {
+    "s_ba8dce57ba8904": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a20c7a-dc24-78e3-a145-e81d69c17cab",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "LioRael <leo@lenso.dev>"
+    }
+  }
+}

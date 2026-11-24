@@ -1,6 +1,6 @@
 {
   "name": "@lenso/design",
-  "version": "0.1.0-preview.2",
+  "version": "0.1.0-preview.3",
   "description": "Open design infrastructure for humans, tools, and agents.",
   "type": "module",
   "engines": {
@@ -15,6 +15,8 @@
   ],
   "exports": {
     ".": "./dist/index.js",
+    "./theme.css": "./dist/theme.css",
+    "./tailwind.css": "./dist/tailwind.css",
     "./css": "./dist/css.js",
     "./dtcg": "./dist/dtcg.js",
     "./presets": "./dist/presets.js",
@@ -26,10 +28,11 @@
     "./docs": "./dist/docs.js",
     "./recipe": "./dist/recipe.js",
     "./design-md": "./dist/design-md.js",
-    "./derive": "./dist/derive.js"
+    "./derive": "./dist/derive.js",
+    "./rendered-theme": "./dist/rendered-theme.js"
   },
   "scripts": {
-    "build": "pnpm build:wasm && tsc",
+    "build": "pnpm build:wasm && tsc && node scripts/build-registry.mjs",
     "check": "tsc --noEmit",
     "test": "pnpm build && node --test test/*.test.mjs",
     "example": "node dist/cli.js build",
@@ -40,7 +43,8 @@
     "@dsgraph/core": "0.9.0",
     "css-tree": "3.2.1",
     "postcss": "8.5.33",
-    "yaml": "2.9.1"
+    "yaml": "2.9.1",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.13",
@@ -54,7 +58,6 @@
     "@ui-sdk/solid": "0.1.0-beta.14",
     "playwright-core": "1.65.1",
     "solid-js": "2.0.3",
-    "typescript": "^6.0.3",
     "vite": "8.3.8",
     "@ui-sdk/core": "0.1.0-beta.14"
   },

@@ -33,3 +33,5 @@ lenso design check --json | jq -e '.outputs.check.ok == true'
 For example, a reference to a missing token yields `ok: false` with diagnostic code `token.missing`. The standalone CLI exits with status 1. A host workflow can complete successfully while reporting this domain error.
 
 An optional policy `contrast` field names `foreground` and `background` color tokens and a minimum luminance ratio from 1 to 21. Each context is checked. Opaque three- and six-digit hexadecimal pairs have measurable ratios. Other color expressions, including glass and transparency, produce a `policy.unverified` warning for rendered review. Set `severity: "warning"` for a recommended threshold. The default threshold severity is an error.
+
+Since preview.3, a usage may also name its owning `component`. Component queries return matching token usages from selected components and unscoped usages. A token query with no component match can return references from any component. Unknown component IDs fail validation. Omit this optional field for the released preview.2 kernel.

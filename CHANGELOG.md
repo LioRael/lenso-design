@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-preview.3
+
+- Add portable recipe parts, a themed Solid Dialog, rendered theme diagnostics and component-scoped source usage.
+- Discover imported JSX component usage without a design contract. Select bundled registry items and delegate installation, upgrade previews and diffs to shadcn.
+- Verify the three native Dialog targets, portal counterexamples, keyboard focus and reuse in an unannotated Lenso Docs project.
+
 ## 0.1.0-preview.2
 
 - Share initialization, multi-axis selection, profiles, mappings and declared usage evidence across the contract tools. Add the v1 schema, migration and impact commands.

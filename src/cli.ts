@@ -13,6 +13,8 @@ import type { Artifact, Context } from "./model.js";
 const help = `Usage: lenso-design <command> [options]
 
 Commands:
+  discover <task> Find imported JSX components in the current project
+  install <item>  Select and install a native registry item with shadcn
   init            Create design.json and an author configuration
   check           Validate tokens, mappings, and output generation
   build           Validate and write generated artifacts
@@ -26,6 +28,9 @@ Commands:
   diff <config>   Compare resolved tokens with another config
 
 Options:
+  --target <name>      Choose a styling target for install
+  --diff               Show shadcn file differences for install
+  --from <directory>   Install from an external generated components directory
   --config <path>      Project config (design.json for contract commands, otherwise design.config.ts)
   --context <k=v>      Select a context dimension (repeatable)
   --json               Emit structured JSON
@@ -115,6 +120,9 @@ async function run(args: string[]) {
   const { values, positionals } = parseArgs({
     args, allowPositionals: true,
     options: {
+      target: { type: "string" },
+      diff: { type: "boolean" },
+      from: { type: "string" },
       config: { type: "string" },
       context: { type: "string", multiple: true, default: [] },
       json: { type: "boolean" },
@@ -130,17 +138,30 @@ async function run(args: string[]) {
   }
   if (values.json) globalThis.console = new Console(process.stderr);
   const print = (value: unknown) => process.stdout.write(JSON.stringify(value, null, values.json ? undefined : 2) + "\n");
-  const withArgument = ["resolve", "query", "diff", "impact"].includes(command);
-  const commands = ["init", "check", "build", "inspect", "tokens", "capabilities", "resolve", "query", "diff", "migrate", "impact"];
+  const withArgument = ["resolve", "query", "diff", "impact", "discover", "install"].includes(command);
+  const commands = ["init", "check", "build", "inspect", "tokens", "capabilities", "resolve", "query", "diff", "migrate", "impact", "discover", "install"];
   if (!commands.includes(command) || extra !== undefined || withArgument !== (argument !== undefined)) {
     fail("cli.command", "Invalid command or arguments. Run lenso-design --help.");
   }
 
+  if (command !== "install" && (values.target || values.from || values.diff)) fail("cli.options", "--target, --from and --diff apply to install.");
+  if (command === "install") {
+    if (values.overwrite || values.config || values.json || values.context.length) fail("cli.options", "Install accepts --target, --from and --dry-run.");
+    const { installComponent } = await import("./install.js");
+    await installComponent(argument!, values.from, values.target, values["dry-run"] ?? false, values.diff ?? false);
+    return;
+  }
   if ((values.overwrite || values["dry-run"]) && command !== "build") {
     fail("cli.options", "--overwrite and --dry-run apply to build.");
   }
   if (values.context.length && !["tokens", "resolve", "query", "diff", "impact"].includes(command)) {
     fail("cli.options", "--context applies to tokens, resolve, query, and diff.");
+  }
+  if (command === "discover") {
+    if (values.config) fail("cli.options", "Run discover from the consumer project directory.");
+    const { discoverComponents } = await import("./discover.js");
+    print({ matches: discoverComponents(argument!) });
+    return;
   }
   if (command === "init") {
     const existingTs = values.config === undefined && await fileContents("design.config.ts") !== undefined;

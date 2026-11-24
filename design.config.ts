@@ -51,6 +51,16 @@ export default defineDesign({
         },
       }),
     }),
+    portableRecipe({
+      component: "examples/dialog/index.tsx",
+      dependencies: ["@ui-sdk/solid@0.1.0-beta.14", "solid-js@2.0.3", "@solidjs/web@2.0.3"],
+      output: `${output}/components`,
+      recipe: defineRecipe({
+        id: "details-dialog",
+        base: { backgroundColor: { ref: "surface.canvas" }, color: { ref: "text.primary" }, borderRadius: { ref: "control.radius" } },
+        parts: { action: { base: { backgroundColor: { ref: "action.primary.background" }, color: { ref: "action.primary.foreground" } } } },
+      }),
+    }),
     shadcn({
       output: `${output}/registry`,
       items: [{

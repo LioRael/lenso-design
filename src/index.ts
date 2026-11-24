@@ -175,6 +175,9 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
       for (const usage of config.usages ?? []) {
         await collect(async () => {
           if (!tokens.get(usage.token)) fail("usage.token", `Unknown usage token "${usage.token}".`, usage.path);
+          if (usage.component !== undefined && !components.some(c => c.id === usage.component)) {
+            fail("usage.definition", `Unknown usage component "${usage.component}".`, usage.path);
+          }
           let content = files.get(usage.path);
           if (content === undefined) {
             try { content = await readProjectFile(usage.path); }
@@ -263,7 +266,9 @@ export async function createDesign(config: DesignConfig, options: { cwd?: string
       );
       const { diagnostics, usages } = await build();
       const ids = new Set(selectedTokens.map(({ id }) => id));
-      const selectedUsages = usages.filter(entry => ids.has(entry.token));
+      const selectedUsages = usages.filter(entry => ids.has(entry.token) && (
+        !selectedComponents.length || entry.component === undefined || selectedComponents.some(c => c.id === entry.component)
+      ));
       const missing = [
         ...(selectedComponents.length ? [] : ["components"]),
         ...(selectedPatterns.length ? [] : ["patterns"]),

@@ -68,6 +68,7 @@ export type Diagnostic = {
   readonly context?: Context;
 };
 export type TokenUsage = {
+  readonly component?: string;
   readonly token: string;
   readonly styling: "css" | "tailwind" | "stylex";
   readonly path: string;

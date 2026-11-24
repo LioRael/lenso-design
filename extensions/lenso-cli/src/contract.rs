@@ -139,6 +139,8 @@ enum Styling {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Usage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    component: Option<String>,
     token: String,
     styling: Styling,
     path: String,
@@ -436,7 +438,11 @@ impl Contract {
             }
         }
         for usage in &self.usages {
-            if !self.tokens.contains_key(&usage.token)
+            if usage
+                .component
+                .as_ref()
+                .is_some_and(|id| !components.contains(id.as_str()))
+                || !self.tokens.contains_key(&usage.token)
                 || usage.path.trim().is_empty()
                 || usage.reference.trim().is_empty()
             {
@@ -658,7 +664,14 @@ impl Contract {
         let usages: Vec<_> = self
             .usages
             .iter()
-            .filter(|usage| ids.contains(usage.token.as_str()))
+            .filter(|usage| {
+                ids.contains(usage.token.as_str())
+                    && (components.is_empty()
+                        || usage
+                            .component
+                            .as_ref()
+                            .is_none_or(|id| components.iter().any(|c| &c.id == id)))
+            })
             .collect();
         let missing = [
             ("components", components.is_empty()),

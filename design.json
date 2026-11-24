@@ -78,6 +78,18 @@
         "action.primary.foreground",
         "control.radius"
       ]
+    },
+    {
+      "id": "details-dialog",
+      "import": "./components/details-dialog",
+      "export": "DetailsDialog",
+      "description": "Display project details in a modal dialog. Pass the portal container from the active theme.",
+      "roles": [
+        "surface.canvas",
+        "control.radius",
+        "action.primary.background",
+        "action.primary.foreground"
+      ]
     }
   ],
   "patterns": [
@@ -86,6 +98,13 @@
       "description": "Use a primary action button for the main action in a flow.",
       "components": [
         "acme-button"
+      ]
+    },
+    {
+      "id": "project-details",
+      "description": "Show project details in a modal without leaving the current project.",
+      "components": [
+        "details-dialog"
       ]
     }
   ],
@@ -112,7 +131,15 @@
       "token": "control.radius",
       "styling": "css",
       "path": "examples/acme-button.tsx",
-      "reference": "var(--acme-radius)"
+      "reference": "var(--acme-radius)",
+      "component": "acme-button"
+    },
+    {
+      "token": "surface.canvas",
+      "component": "details-dialog",
+      "styling": "css",
+      "path": "examples/project-details/project-details.tsx",
+      "reference": "var(--ds-surface-canvas)"
     }
   ],
   "mappings": [

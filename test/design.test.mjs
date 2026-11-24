@@ -462,3 +462,21 @@ test("Docs collection reads the contract through its watched source", async () =
   assert.match(collection.template(components), /@\/components\/ui\/acme-button/);
   assert.deepEqual(components.sources, paths);
 });
+
+test("component queries select relevant usage evidence in both author and declarative modes", async () => {
+  const { runDesignContract } = await import("@lenso/design/contract");
+  const contract = await readFile(new URL("../design.json", import.meta.url), "utf8");
+  const design = await createDesign(example);
+  for (const task of ["project details", "radius"]) {
+    const author = await design.query(task);
+    const wasm = await runDesignContract(contract, "query", { task });
+    const scoped = usages => usages.filter(u => u.component).map(u => u.component);
+    assert.deepEqual(scoped(author.usages), scoped(wasm.usages));
+    assert.deepEqual(scoped(wasm.usages), [task === "radius" ? "acme-button" : "details-dialog"]);
+  }
+  const bad = JSON.parse(contract);
+  bad.usages[0].component = "absent";
+  assert.equal((await runDesignContract(JSON.stringify(bad), "check")).diagnostics[0].code, "usage.definition");
+  delete bad.usages[0].component;
+  assert.equal((await runDesignContract(JSON.stringify(bad), "check")).ok, true);
+});

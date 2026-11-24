@@ -393,6 +393,10 @@
         "reference": {
           "type": "string",
           "minLength": 1
+        },
+        "component": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [

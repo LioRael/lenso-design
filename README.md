@@ -16,11 +16,37 @@ In an empty project with Lenso 1.1.2, save this as `design.json`:
 ```
 
 ```sh
-lenso ext add github-release:LioRael/lenso-design/design --id design --constraint '=0.1.0-preview.1'
-lenso design resolve surface --appearance dark --json
+lenso ext add github-release:LioRael/lenso-design/design --id design --constraint '=0.1.0-preview.3'
+lenso design resolve surface --context appearance=dark --json
 ```
 
 Review the read grant for `design.json`. The value at `outputs.resolve.value` is `#222`. The command works with a locked, cached extension offline. The [contract reference](spec/contract-v1.md) documents this checkout's schema, CI checks and context limits. New optional fields, usage references and repeatable context options require preview.2.
+
+## Install the standalone CLI
+
+With Node.js 22.18 or later, run these commands in your project:
+
+```sh
+npm install @lenso/design@preview
+npx lenso-design init
+npx lenso-design check
+```
+
+### Find and reuse an existing component
+
+Run `npx lenso-design discover "Advanced options" --json` in an existing JSX or TSX project. The command searches imported JSX tags and their opening attributes and returns ranked usage locations, local names, module specifiers, exports, and resolvable declarations. It reads tsconfig when present. No Design contract is needed. The [browser acceptance case](test/discovery-browser.mjs) exercises a real Lenso Docs component from an unannotated project.
+
+### Install a native component
+
+In a Solid project configured for shadcn, install the shadcn CLI locally or put it on PATH. The npm package includes the bold-toggle and details-dialog Registry items. Preview, compare, then install or upgrade with:
+
+```sh
+npx lenso-design install details-dialog --dry-run
+npx lenso-design install details-dialog --diff
+npx lenso-design install details-dialog
+```
+
+A direct Tailwind or StyleX dependency selects its target. With neither present the CLI offers the CSS Modules item, which requires a CSS Modules compiler. Choose `--target css-modules|stylex|tailwind` explicitly when both are present. Use `--from <components-directory>` for your own generated items. shadcn owns the file plan and overwrite prompts. For the bundled items, import `@lenso/design/theme.css` in your consumer stylesheet. For Tailwind, also import `@lenso/design/tailwind.css` after Tailwind itself. Custom registries can supply their own theme.
 
 ## Run the example
 
@@ -148,6 +174,12 @@ The [Solid Toggle](examples/toggle/index.tsx) uses UI SDK for its accessible beh
 
 Portable rules currently bind background, foreground, corner radius, inline padding, minimum height and outline color to typed tokens. States include hover, focus-visible and disabled. For other properties or layout/interaction models, provide a native implementation. Run `pnpm test:browser` with Chrome installed to compile all three variants and exercise the same Toggle in light and dark themes with the keyboard.
 
+### Portal and theme scope in the Dialog example
+
+The [Solid Dialog](examples/dialog/index.tsx) uses one recipe for its panel and a named `action` part for its trigger and close button. Run `pnpm example` to generate `examples/generated/components/<target>/details-dialog/registry.json`. Install that item in a Solid project configured for the selected styling target.
+
+Pass a portal container inside the desired theme scope, such as a sibling of the application mount under the same `data-theme="dark"` element. UI SDK mounts the panel there so it inherits the theme variables even when the trigger and panel live in different DOM subtrees. The browser test opens the dialog with Enter, switches its theme while open, and checks that Escape returns focus to the trigger on each target.
+
 ## Lenso Docs and DESIGN.md
 
 Use `defineCollection(designCollection("design.json"))` in a Lenso Docs config. Import `designCollection` from `@lenso/design/docs` and `defineCollection` from the Docs project. The collection uses the Docs file reader and emits reference pages for the populated contract sections.
@@ -158,13 +190,29 @@ Use `deriveDesign(config, derivations)` from `@lenso/design/derive` for scaled n
 
 ## Preview acceptance
 
-| Workflow | Checked in preview.2 |
+| Workflow | Checked in preview.3 |
 | --- | --- |
 | Official CLI | Lenso 1.1.2 reads the current contract with one file grant. Repeated context flags select combined dimensions. |
-| Independent author | The packed npm CLI initializes an empty CommonJS project, resolves a dark token and builds CSS. The public npm release requires registry credentials. |
+| Independent author | The packed npm CLI initializes an empty CommonJS project, resolves a dark token and builds CSS. The public preview installs with `npm install @lenso/design@preview`. |
 | Third-party Registry | The upstream Separator keeps its files and dependencies. The shadcn CLI installs it and writes the scoped theme binding. A missing destination variable fails the author check. |
 | Multi-target installation | One Solid UI SDK Toggle compiles with Tailwind, StyleX and CSS Modules. Chrome checks colors, radius, accessible name, Space and Enter. The shadcn CLI installs the generated CSS Modules item and preserves a local edit when the overwrite prompt is declined. |
 | Material variants | The Registry can restrict native sources to named targets and validate a target's available capabilities. Glass requires a real renderer. Optical fidelity and performance in Lenso UI require rendered product acceptance. |
 | Agent and Docs | Queries return declared source references. Author checks catch missing reference text. The Docs collection generates reference pages from the same contract. |
 
 Cross-framework compilation, automatic discovery of arbitrary application usages, Figma synchronization, full CSS cascade analysis and visual benchmark coverage are outside the verified preview scope.
+
+### Dialog counterexamples and agent reuse
+
+Run `pnpm test:browser` to compare the declared design with Chrome's actual rendering. The optional browser helper `checkRenderedTheme(scope, panel, variables)` from `@lenso/design/rendered-theme` compares the selected custom properties on an open panel and its intended theme scope. The component itself has no dependency on this helper.
+
+| Dialog condition | Evidence |
+| --- | --- |
+| Portal inside the dark theme | No theme diagnostics. The rendered panel uses the dark background. |
+| Portal outside the dark theme | A scope warning and a differing variable. Chrome renders the light background. |
+| Panel overrides the required variable | A differing variable warning. Chrome renders the overriding red color. |
+| Required panel variable reset to initial | A missing-variable error. Chrome renders a transparent background. |
+| Backdrop blur requested | The solid-only target reports a missing capability and Chrome reports no filter. A separate target declaring and applying blur computes a 6px filter. |
+
+The first four cases run against all three styling targets. Variable differences compare computed custom-property text. Confirm visual impact using the affected CSS property; equivalent CSS colors can have different textual representations.
+
+The same test asks the standalone CLI for `project details`, uses the returned import, export and source usage to build the [consumer page](examples/project-details/project-details.tsx) against the generated CSS Modules Registry item, and opens and dismisses it with the keyboard. This records one reproducible reuse task. That fixture supplies its usage declarations. A separate [discovery test](test/discovery-browser.mjs) reuses a Disclosure from unannotated JSX. Multi-task success rates remain unmeasured.

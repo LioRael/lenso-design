@@ -1,0 +1,53 @@
+src/command.ts
+  s_ba8dce57ba8904::t_f5e9fee62c76de 1-265
+src/host-commands.ts
+  s_ba8dce57ba8904::t_f5e9fee62c76de 1-18
+src/install.ts
+  s_ba8dce57ba8904::t_bf18117b12f2cd 7,27-31
+src/host-install.ts
+  s_ba8dce57ba8904::t_bf18117b12f2cd 1-28,30-54,57-62,74-77
+  s_ba8dce57ba8904::t_85eaa040150e35 29,55-56,63-73
+spec/contract-v1.md
+  s_ba8dce57ba8904::t_074c371b11f8ac 19,21,23-24
+README.md
+  s_ba8dce57ba8904::t_074c371b11f8ac 33-37,44,51-53,56,127,176
+  s_ba8dce57ba8904::t_85eaa040150e35 40
+  s_ba8dce57ba8904::t_e80ff40a3cae5e 19,25,27-29,32,41
+test/host.test.mjs
+  s_ba8dce57ba8904::t_85eaa040150e35 1-38
+src/cli.ts
+  s_ba8dce57ba8904::t_f5e9fee62c76de 2-3,5
+package.json
+  s_ba8dce57ba8904::t_074c371b11f8ac 3
+  s_ba8dce57ba8904::t_f5e9fee62c76de 35,46-47,58,62
+scripts/build-host.mjs
+  s_ba8dce57ba8904::t_f5e9fee62c76de 1-25
+src/host.ts
+  s_ba8dce57ba8904::t_bf18117b12f2cd 1-53
+CHANGELOG.md
+  s_ba8dce57ba8904::t_6f78af45d210e8 3-8
+extensions/lenso-cli/Cargo.lock
+  s_ba8dce57ba8904::t_38f35eaaeec382 146
+extensions/lenso-cli/Cargo.toml
+  s_ba8dce57ba8904::t_08f9fe78501a36 3
+extensions/lenso-cli/extension.toml
+  s_ba8dce57ba8904::t_3420b416af3134 3
+lenso.toml
+  s_ba8dce57ba8904::t_b16d8fc38fe43c 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e366a51c11a5ed9b3c8c7ade6e36f7cab6a46b02",
+  "prompts": {},
+  "sessions": {
+    "s_ba8dce57ba8904": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a20c7a-dc24-78e3-a145-e81d69c17cab",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "LioRael <leo@lenso.dev>"
+    }
+  }
+}
